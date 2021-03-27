@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/tietang/dbx"
 )
 
@@ -12,8 +13,9 @@ type OrderStageDao struct {
 
 func (dao *OrderStageDao) GetByOrderId(orderId int64) *[]OrderStage {
 	form := &[]OrderStage{}
-	ok, err := dao.runner.Get(form, "select * from order_stage where order_id=?", orderId)
-	if err != nil || !ok {
+	err := dao.runner.Find(form, "select * from order_stage where order_id=?", orderId)
+	if err != nil {
+		logrus.Error(err)
 		return nil
 	}
 	return form

@@ -26,25 +26,27 @@ type orderService struct {
 }
 
 func (o orderService) GetOrdersByUser(userId int64) (finishOrders, doingOrders OrderSlice, err error) {
-	dao := OrderDao{}
-	orders := dao.GetByUserId(userId)
-	if orders == nil {
-		err = errors.New("没有订单")
-		log.Error(err)
-		return
-	}
-	stageDao := OrderStageDao{}
-	for _, order := range *orders {
-		orderStage := stageDao.GetByOrderId(order.Id)
-		order.OrderStage = orderStage
-		if order.Stage == 7 {
-			finishOrders = append(finishOrders, order)
-		} else {
-			doingOrders = append(doingOrders, order)
+	var orders *[]Order
+	_ = base.Tx(func(runner *dbx.TxRunner) error {
+		dao := OrderDao{runner: runner}
+		orders = dao.GetByUserId(userId)
+		if orders==nil{
+			return nil
 		}
-	}
-	sort.Sort(sort.Reverse(finishOrders))
-	sort.Sort(sort.Reverse(doingOrders))
+		stageDao := OrderStageDao{runner: runner}
+		for _, order := range *orders {
+			orderStage := stageDao.GetByOrderId(order.Id)
+			order.OrderStage = orderStage
+			if order.Stage == 7 {
+				finishOrders = append(finishOrders, order)
+			} else {
+				doingOrders = append(doingOrders, order)
+			}
+		}
+		sort.Sort(sort.Reverse(finishOrders))
+		sort.Sort(sort.Reverse(doingOrders))
+		return nil
+	})
 	return
 }
 

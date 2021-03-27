@@ -13,12 +13,13 @@ type OrderDao struct {
 
 
 func (dao *OrderDao) GetByUserId(userId int64) *[]Order {
-	form := &[]Order{}
-	ok, err := dao.runner.Get(form, "select * from order where household_id=?", userId)
-	if err != nil || !ok {
+	form := []Order{}
+	err := dao.runner.Find(&form, "select * from `order` where household_id=?",userId)
+	if err != nil{
+		log.Error(err)
 		return nil
 	}
-	return form
+	return &form
 }
 func (dao *OrderDao) GetOneByOrderId(orderId int64) *Order {
 	form := &Order{}
