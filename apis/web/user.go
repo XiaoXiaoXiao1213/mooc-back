@@ -20,27 +20,27 @@ type UserApi struct {
 	service users.UserService
 }
 
-func (a *UserApi) Init() {
-	a.service = users.GetUserService()
+func (u *UserApi) Init() {
+	u.service = users.GetUserService()
 	groupRouter := base.Iris().Party("/api/1.0/user")
-	groupRouter.Post("/register", a.register)
-	groupRouter.Post("/login", loginMeddle, a.login)
-	groupRouter.Put("/reset", a.reset)
-	groupRouter.Get("/message/{phone}/{user_type}", loginMeddle, a.message)
-	groupRouter.Post("/personal", loginMeddle, a.personal)
-	groupRouter.Put("/click", loginMeddle, a.click)
-	groupRouter.Get("/order", loginMeddle, a.order)
+	groupRouter.Post("/register", u.register)
+	groupRouter.Post("/login", loginMeddle, u.login)
+	groupRouter.Put("/reset", u.reset)
+	groupRouter.Get("/message/{phone}/{user_type}", loginMeddle, u.message)
+	groupRouter.Post("/personal", loginMeddle, u.personal)
+	groupRouter.Put("/click", loginMeddle, u.click)
+	groupRouter.Get("/order", loginMeddle, u.order)
 }
 
 // 用户注册
-func (a *UserApi) register(ctx iris.Context) {
-	//获取请求参数
-	user := users.User{}
-	err := ctx.ReadJSON(&user)
+func (u *UserApi) register(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
-	// TODO 参数检测
+
+	//获取请求参数
+	user := users.User{}
+	err := ctx.ReadJSON(&user)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = "字段或字段值格式错误"
@@ -49,8 +49,16 @@ func (a *UserApi) register(ctx iris.Context) {
 		return
 	}
 
+	if !checkUser(user) {
+		r.Code = base.ResError
+		r.Message = "缺少参数"
+		ctx.JSON(&r)
+		logrus.Error(err)
+		return
+	}
+
 	//创建用户
-	err = a.service.Create(user)
+	err = u.service.Create(user)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
@@ -63,13 +71,13 @@ func (a *UserApi) register(ctx iris.Context) {
 
 }
 
-func (a *UserApi) login(ctx iris.Context) {
-	//获取请求参数，
-	user := users.User{}
-	err := ctx.ReadJSON(&user)
+func (u *UserApi) login(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
+	//获取请求参数
+	user := users.User{}
+	err := ctx.ReadJSON(&user)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
@@ -77,8 +85,7 @@ func (a *UserApi) login(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-	// TODO 参数检测
-	err = a.service.Login(user.Phone, user.Password, user.UserType)
+	err = u.service.Login(user.Phone, user.Password, user.UserType)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
@@ -86,14 +93,7 @@ func (a *UserApi) login(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-	token, err := core.GenerateToken(user)
-	if err != nil {
-		r.Code = base.ResError
-		r.Message = err.Error()
-		ctx.JSON(&r)
-		logrus.Error(err)
-		return
-	}
+	token, _ := core.GenerateToken(user)
 	r.Data = map[string]string{
 		"token": token,
 	}
@@ -105,19 +105,10 @@ func (u *UserApi) order(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
-	//获取请求参数
-	phone := ctx.GetHeader("phone")
+
 	userId, _ := strconv.ParseInt(ctx.GetHeader("user_id"), 10, 64)
-	userType, _ := strconv.Atoi(ctx.GetHeader("user_type"))
-	user := users.User{
-		Phone:    phone,
-		Id:       userId,
-		UserType: userType,
-	}
 	service := orders.GetOrderService()
 	finishOrder, doingOrders, err := service.GetOrdersByUser(userId)
-
-	token, err := core.GenerateToken(user)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
@@ -125,8 +116,9 @@ func (u *UserApi) order(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
+
 	r.Data = map[string]interface{}{
-		"token":           token,
+		"token":           refreshToken(ctx),
 		"processing_list": doingOrders,
 		"complete_list":   finishOrder,
 	}
@@ -134,12 +126,13 @@ func (u *UserApi) order(ctx iris.Context) {
 
 }
 
-func (a *UserApi) reset(ctx iris.Context) {
-	user := users.User{}
-	err := ctx.ReadJSON(&user)
+func (u *UserApi) reset(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
+
+	user := users.User{}
+	err := ctx.ReadJSON(&user)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
@@ -147,7 +140,8 @@ func (a *UserApi) reset(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-	err = a.service.ResetPassword(user)
+
+	err = u.service.ResetPassword(user)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
@@ -156,10 +150,9 @@ func (a *UserApi) reset(ctx iris.Context) {
 		return
 	}
 	ctx.JSON(&r)
-
 }
 
-func (a *UserApi) message(ctx iris.Context) {
+func (u *UserApi) message(ctx iris.Context) {
 	phone := ctx.Params().Get("phone")
 	userType, err := strconv.Atoi(ctx.Params().Get("user_type"))
 	if err != nil {
@@ -174,7 +167,7 @@ func (a *UserApi) message(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
-	user, err := a.service.GetUserByPhone(phone, userType)
+	user, err := u.service.GetUserByPhone(phone, userType)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
@@ -190,18 +183,15 @@ func (a *UserApi) message(ctx iris.Context) {
 	ctx.JSON(&r)
 }
 
-func (a *UserApi) personal(ctx iris.Context) {
-	//获取请求参数
-	phone := ctx.GetHeader("phone")
-	userType := ctx.GetHeader("user_type")
-	atoi, _ := strconv.Atoi(userType)
-	user := users.User{}
-	err := ctx.ReadJSON(&user)
-	user.Phone = phone
-	user.UserType = atoi
+func (u *UserApi) personal(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
+
+	//获取请求参数
+	user := users.User{}
+	err := ctx.ReadJSON(&user)
+
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = "字段或字段值格式错误"
@@ -209,57 +199,71 @@ func (a *UserApi) personal(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-
-	err = a.service.Edit(user)
+	user.Phone = ctx.GetHeader("phone")
+	user.UserType,_ = strconv.Atoi(ctx.GetHeader("user_type"))
+	err = u.service.Edit(user)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
 		logrus.Error(err)
 	}
 
-	token, err := core.GenerateToken(user)
 	r.Data = map[string]interface{}{
-		"token": token,
+		"token": refreshToken(ctx),
 		"user":  user,
 	}
 	ctx.JSON(&r)
 }
 
-func (a *UserApi) click(ctx iris.Context) {
-	phone := ctx.GetHeader("phone")
-	userType := ctx.GetHeader("user_type")
-	atoi, _ := strconv.Atoi(userType)
-	if atoi != 2 {
-		r := base.Res{
-			Code:    base.ResError,
-			Message: "该用户不是员工",
-		}
-		ctx.JSON(&r)
-	}
-	//获取请求参数
-	user := users.User{Phone: phone, UserType: atoi}
+func (u *UserApi) click(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
-
-	//创建用户
-	u, err := a.service.GetUserByPhone(phone, atoi)
-	if u.State == 2 {
-		u.State = 1
-	} else {
-		u.State = 2
+	phone := ctx.GetHeader("phone")
+	userType, _ := strconv.Atoi(ctx.GetHeader("user_type"))
+	if userType != 2 {
+		r.Code = base.ResError
+		r.Message = "该用户不是员工"
+		ctx.JSON(&r)
 	}
-	u.UpdatedAt = time.Now()
-	err = a.service.Edit(user)
+
+	oldUser, err := u.service.GetUserByPhone(phone, userType)
+	if oldUser.State == 2 {
+		oldUser.State = 1
+	} else {
+		oldUser.State = 2
+	}
+	oldUser.UpdatedAt = time.Now()
+	err = u.service.Edit(*oldUser)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = "打卡失败"
 		logrus.Error(err)
 	}
 
-	token, err := core.GenerateToken(user)
 	r.Data = map[string]interface{}{
-		"token": token,
+		"token": refreshToken(ctx),
 	}
 	ctx.JSON(&r)
+}
+
+func checkUser(user users.User) bool {
+	if user.Name == "" || user.Id_code == "" || user.Phone == "" || user.Email == "" ||
+		user.UserType == 0 {
+		return false
+	}
+	return true
+}
+
+func refreshToken(ctx iris.Context) string {
+	phone := ctx.GetHeader("phone")
+	userId, _ := strconv.ParseInt(ctx.GetHeader("user_id"), 10, 64)
+	userType, _ := strconv.Atoi(ctx.GetHeader("user_type"))
+	user := users.User{
+		Phone:    phone,
+		Id:       userId,
+		UserType: userType,
+	}
+	token, _ := core.GenerateToken(user)
+	return token
 }
