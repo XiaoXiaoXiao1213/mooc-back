@@ -24,11 +24,11 @@ func (u *UserApi) Init() {
 	u.service = users.GetUserService()
 	groupRouter := base.Iris().Party("/api/1.0/user")
 	groupRouter.Post("/register", u.register)
-	groupRouter.Post("/login", loginMeddle, u.login)
+	groupRouter.Post("/login", u.login)
 	groupRouter.Put("/reset", u.reset)
-	groupRouter.Get("/message/{phone}/{user_type}", loginMeddle, u.message)
+	groupRouter.Get("/message", loginMeddle, u.message)
 	groupRouter.Post("/personal", loginMeddle, u.personal)
-	groupRouter.Put("/click", loginMeddle, u.click)
+	groupRouter.Put("/click", employeeMeddle, u.click)
 	groupRouter.Get("/order", loginMeddle, u.order)
 }
 
@@ -56,6 +56,14 @@ func (u *UserApi) register(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
+	_, err = u.service.GetUserByPhone(user.Phone, user.UserType)
+	if err == nil {
+		r.Code = base.ResError
+		r.Message = "用户已注册"
+		ctx.JSON(&r)
+		logrus.Error(err)
+		return
+	}
 
 	//创建用户
 	err = u.service.Create(user)
@@ -76,8 +84,8 @@ func (u *UserApi) login(ctx iris.Context) {
 		Code: base.ResCodeOk,
 	}
 	//获取请求参数
-	user := users.User{}
-	err := ctx.ReadJSON(&user)
+	user := &users.User{}
+	err := ctx.ReadJSON(user)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
@@ -85,7 +93,7 @@ func (u *UserApi) login(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-	err = u.service.Login(user.Phone, user.Password, user.UserType)
+	user,err = u.service.Login(user.Phone, user.Password, user.UserType)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
@@ -93,7 +101,7 @@ func (u *UserApi) login(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-	token, _ := core.GenerateToken(user)
+	token, _ := core.GenerateToken(*user)
 	r.Data = map[string]string{
 		"token": token,
 	}
@@ -153,20 +161,11 @@ func (u *UserApi) reset(ctx iris.Context) {
 }
 
 func (u *UserApi) message(ctx iris.Context) {
-	phone := ctx.Params().Get("phone")
-	userType, err := strconv.Atoi(ctx.Params().Get("user_type"))
-	if err != nil {
-		r := base.Res{
-			Code:    base.ResError,
-			Message: "地址格式错误",
-		}
-		ctx.JSON(&r)
-		logrus.Error(err)
-		return
-	}
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
+	phone := ctx.GetHeader("phone")
+	userType, err := strconv.Atoi(ctx.GetHeader("user_type"))
 	user, err := u.service.GetUserByPhone(phone, userType)
 	if err != nil {
 		r.Code = base.ResError
@@ -175,9 +174,8 @@ func (u *UserApi) message(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-	token, err := core.GenerateToken(*user)
 	r.Data = map[string]interface{}{
-		"token": token,
+		"token": refreshToken(ctx),
 		"user":  user,
 	}
 	ctx.JSON(&r)
@@ -200,7 +198,7 @@ func (u *UserApi) personal(ctx iris.Context) {
 		return
 	}
 	user.Phone = ctx.GetHeader("phone")
-	user.UserType,_ = strconv.Atoi(ctx.GetHeader("user_type"))
+	user.UserType, _ = strconv.Atoi(ctx.GetHeader("user_type"))
 	err = u.service.Edit(user)
 	if err != nil {
 		r.Code = base.ResError

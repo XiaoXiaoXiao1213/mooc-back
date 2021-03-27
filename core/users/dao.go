@@ -1,6 +1,7 @@
 package users
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/tietang/dbx"
 )
 
@@ -10,9 +11,10 @@ type UserDao struct {
 
 // 通过手机号和类型获取用户
 func (dao *UserDao) GetOne(phone string, userType int) *User {
-	form := &User{Phone: phone, UserType: userType}
+	form := &User{}
 	ok, err := dao.runner.Get(form, "select * from user where phone=? and user_type=?", phone, userType)
 	if err != nil || !ok {
+		logrus.Error(err)
 		return nil
 	}
 	return form

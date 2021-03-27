@@ -17,7 +17,7 @@ func GetUserService() UserService {
 type UserService interface {
 	Create(user User) error
 	Edit(user User) error
-	Login(phone, password string, userType int) error
+	Login(phone, password string, userType int) (*User,error)
 	ResetPassword(user User) error
 	GetUserByPhone(phone string, userType int) (*User, error)
 	//GetEnvelopeAccountByUserId(userId string) *AccountDTO

@@ -3,7 +3,6 @@ package core
 import (
 	"fmt"
 	"github.com/develop1024/jwt-go"
-	log "github.com/sirupsen/logrus"
 	"management/core/users"
 	"time"
 )
@@ -19,7 +18,6 @@ func GenerateToken(user users.User) (tokenString string, err error) {
 		"exp":       time.Now().Add(time.Hour * 3).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, data)
-	log.Error(token)
 	tokenString, err = token.SignedString([]byte(secret))
 	return
 }
@@ -35,11 +33,10 @@ func ParseToken(tokenString string) (*users.User, error) {
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		user := users.User{
-			Id:       claims["user_id"].(int64),
+			Id:       int64(claims["user_id"].(float64)),
 			Phone:    claims["phone"].(string),
-			UserType: claims["user_tpye"].(int),
+			UserType: int(claims["user_type"].(float64)),
 		}
-
 		return &user, nil
 	} else {
 		return nil, err
