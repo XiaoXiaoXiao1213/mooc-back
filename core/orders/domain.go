@@ -9,12 +9,13 @@ type Order struct {
 	EmployeeId    int64         `db:"employee_id" json:"employee_id,omitempty"`
 	HouseId       int64         `db:"house_id" json:"house_id,omitempty"`
 	EmployeeName  string        `db:"employee_name" json:"employee_name,omitempty"`
-	Type          int           `db:"type" json:"type,omitempty"`
+	Type          string        `db:"type" json:"type,omitempty"`
 	Emergency     int           `db:"emergency" json:"emergency,omitempty"`
 	Stage         int           `db:"stage" json:"stage,omitempty"`
 	EvaluationId  int64         `db:"evaluation_id" json:"evaluation_id,omitempty"`
 	CreatedAt     time.Time     `db:"create_time" json:"update_time,omitempty"`
 	UpdatedAt     time.Time     `db:"update_time" json:"update_time,omitempty"`
+	Note          string        `db:"omitempty" json:"note,omitempty"`
 	OrderStage    *[]OrderStage `db:"omitempty" json:"order_stage,omitempty"`
 }
 

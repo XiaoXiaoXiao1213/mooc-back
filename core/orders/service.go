@@ -49,23 +49,30 @@ func (o orderService) GetOrdersByUser(userId int64) (finishOrders, doingOrders O
 }
 
 func (o orderService) Create(order Order, user users.User) error {
-	userDao := users.UserDao{}
-	u := userDao.GetOne(user.Phone, 2)
-	if u == nil {
-		err := errors.New("查找用户失败")
-		return err
-	}
-	order.HouseholdId = u.Id
-	order.HouseholdName = u.Name
-	order.CreatedAt = time.Now()
-	order.UpdatedAt = time.Now()
 	err := base.Tx(func(runner *dbx.TxRunner) error {
-		dao := OrderDao{runner: runner}
-		_, err := dao.runner.Insert(order)
-		if err != nil {
+		userDao := users.UserDao{runner}
+		u := userDao.GetOne(user.Phone, user.UserType)
+		if u == nil {
+			err := errors.New("查找用户失败")
 			return err
 		}
-		return nil
+		dao := OrderDao{runner: runner}
+		//stageDao := OrderStageDao{runner: runner}
+
+		order.HouseholdId = u.Id
+		order.HouseholdName = u.Name
+		order.CreatedAt = time.Now()
+		order.UpdatedAt = time.Now()
+		ordersss, err := dao.runner.Insert(order)
+		//OrderStage{
+		//	Stage: order.Stage
+		//	OrderId: ordersss
+		//}
+		//stageDao.Insert()
+		log.Error(ordersss)
+
+		return err
+
 	})
 	return err
 }

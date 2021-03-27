@@ -24,7 +24,6 @@ func loginMeddle(ctx iris.Context) {
 		}
 		ctx.JSON(&r)
 	}
-
 	ctx.Request().Header.Set("phone", user.Phone)
 	ctx.Request().Header.Set("user_type", strconv.Itoa(user.UserType))
 	ctx.Request().Header.Set("user_id", strconv.FormatInt(user.Id,10))

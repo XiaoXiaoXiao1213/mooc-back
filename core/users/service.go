@@ -24,7 +24,7 @@ type userService struct {
 
 func (u *userService) Edit(user User) error {
 	err := base.Tx(func(runner *dbx.TxRunner) error {
-		dao := UserDao{runner: runner}
+		dao := UserDao{runner}
 		oldUser := dao.GetOne(user.Phone, user.UserType)
 		if oldUser == nil {
 			err := errors.New("用户不存在")
@@ -33,10 +33,10 @@ func (u *userService) Edit(user User) error {
 		}
 
 		createEditUser(oldUser, user)
-		log.Error("ea",oldUser)
+		log.Error("ea", oldUser)
 		oldUser.UpdatedAt = time.Now()
 		update, err := dao.Update(oldUser)
-		log.Error("ea",update)
+		log.Error("ea", update)
 
 		if update < 1 || err != nil {
 			log.Error(err, fmt.Sprintf("update num %d", update))
@@ -48,10 +48,10 @@ func (u *userService) Edit(user User) error {
 	return err
 }
 
-func (u *userService) Login(phone, password string, userType int) (*User,error) {
+func (u *userService) Login(phone, password string, userType int) (*User, error) {
 	var user *User
 	err := base.Tx(func(runner *dbx.TxRunner) error {
-		dao := UserDao{runner: runner}
+		dao := UserDao{runner}
 		user = dao.GetOne(phone, userType)
 		//创建用户
 		if user == nil {
@@ -77,8 +77,8 @@ func (u *userService) Create(user User) error {
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 	err := base.Tx(func(runner *dbx.TxRunner) error {
-		dao := UserDao{runner: runner}
-		_, err := dao.runner.Insert(user)
+		dao := UserDao{ runner}
+		_, err := dao.Runner.Insert(user)
 		if err != nil {
 			return err
 		}
@@ -107,8 +107,8 @@ func (u *userService) ResetPassword(user User) error {
 
 func (u *userService) GetUserByPhone(phone string, userType int) (user *User, err error) {
 	err = base.Tx(func(runner *dbx.TxRunner) error {
-		dao := UserDao{runner: runner}
-		log.Error(phone,userType)
+		dao := UserDao{ runner}
+		log.Error(phone, userType)
 		user = dao.GetOne(phone, userType)
 		if user == nil {
 			err := errors.New("用户不存在")

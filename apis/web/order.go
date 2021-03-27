@@ -21,14 +21,14 @@ type OrderApi struct {
 func (a *OrderApi) Init() {
 	a.service = orders.GetOrderService()
 	groupRouter := base.Iris().Party("/api/1.0/order")
-	groupRouter.Post("/create", loginMeddle, employeeMeddle, a.create)
+	groupRouter.Post("/create", loginMeddle, a.createOrder)
 	groupRouter.Get("/{id}", loginMeddle, a.getOrderById)
 	groupRouter.Post("/{id}", loginMeddle, a.editOrder)
 	groupRouter.Post("/evaluation/{order_id}", loginMeddle, a.evaluationOrder)
 }
 
 // 创建订单
-func (a *OrderApi) create(ctx iris.Context) {
+func (a *OrderApi) createOrder(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
@@ -45,7 +45,8 @@ func (a *OrderApi) create(ctx iris.Context) {
 
 	//获取请求参数
 	phone := ctx.GetHeader("phone")
-	user := users.User{Phone: phone}
+	userType, _ := strconv.Atoi(ctx.GetHeader("user_type"))
+	user := users.User{Phone: phone, UserType: userType}
 	err = a.service.Create(order, user)
 	if err != nil {
 		r.Code = base.ResError
