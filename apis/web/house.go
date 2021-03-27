@@ -41,14 +41,11 @@ func (h *HouseApi) create(ctx iris.Context) {
 		return
 	}
 
-	//创建用户
 	err = h.service.Create(house)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
 		logrus.Error(err)
-		ctx.JSON(&r)
-		return
 	}
 	ctx.JSON(&r)
 }
@@ -58,10 +55,10 @@ func (h *HouseApi) register(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
+
 	//获取请求参数
 	house := &houses.House{}
 	err := ctx.ReadJSON(house)
-
 	if err != nil || house.HouseId == "" || house.HouseholdId == 0 {
 		r.Code = base.ResError
 		r.Message = "字段或字段值格式错误"
@@ -69,6 +66,7 @@ func (h *HouseApi) register(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
+
 	hou, err := h.service.SelectByHouseId(house.HouseId)
 	if err != nil || hou.HouseholdId != 0 {
 		r.Code = base.ResError
@@ -83,9 +81,7 @@ func (h *HouseApi) register(ctx iris.Context) {
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
-		ctx.JSON(&r)
 		logrus.Error(err)
-		return
 	}
 	ctx.JSON(&r)
 
