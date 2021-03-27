@@ -25,6 +25,7 @@ func (a *OrderApi) Init() {
 	groupRouter.Post("/create", loginMeddle, employeeMeddle, a.create)
 	groupRouter.Get("/{id}", loginMeddle, a.orderId)
 	groupRouter.Post("/{id}", loginMeddle, a.editOrder)
+	groupRouter.Post("/evaluation/{order_id}", loginMeddle, a.evaluationOrder)
 }
 
 // 创建订单
@@ -48,6 +49,34 @@ func (a *OrderApi) create(ctx iris.Context) {
 
 	//创建用户
 	err = a.service.Create(order, user)
+	if err != nil {
+		r.Code = base.ResError
+		r.Message = err.Error()
+		logrus.Error(err)
+		ctx.JSON(&r)
+		return
+	}
+
+	ctx.JSON(&r)
+
+}
+func (a *OrderApi) evaluationOrder(ctx iris.Context) {
+	//获取请求参数
+	evalutaion := orders.Evaluation{}
+	err := ctx.ReadJSON(&evalutaion)
+	r := base.Res{
+		Code: base.ResCodeOk,
+	}
+	if err != nil {
+		r.Code = base.ResError
+		r.Message = "字段或字段值格式错误"
+		ctx.JSON(&r)
+		logrus.Error(err)
+		return
+	}
+
+	//创建用户
+	err = a.service.TakeEvaluation(evalutaion)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
