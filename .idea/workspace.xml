@@ -10,9 +10,7 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f846a5ae-8a2d-469d-9e46-42c440f17d04" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/apis/web/house.go" beforeDir="false" afterPath="$PROJECT_DIR$/apis/web/house.go" afterDir="false" />
-    </list>
+    <list default="true" id="f846a5ae-8a2d-469d-9e46-42c440f17d04" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -155,7 +153,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/apis/web/order.go</url>
-          <line>31</line>
+          <line>30</line>
           <option name="timeStamp" value="9" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
