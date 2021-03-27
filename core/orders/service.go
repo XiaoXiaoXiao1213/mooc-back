@@ -48,37 +48,47 @@ func (o orderService) GetOrdersByUser(userId int64) (finishOrders, doingOrders O
 	return
 }
 
-func (o orderService) Create(order Order, user users.User) error {
-	err := base.Tx(func(runner *dbx.TxRunner) error {
-		userDao := users.UserDao{runner}
-		u := userDao.GetOne(user.Phone, user.UserType)
-		if u == nil {
-			err := errors.New("查找用户失败")
-			return err
-		}
-		dao := OrderDao{runner: runner}
-		//stageDao := OrderStageDao{runner: runner}
+func (o orderService) Create(order Order, user users.User) (*Order, error) {
 
+	u, err := users.GetUserService().GetUserByPhone(user.Phone, user.UserType)
+	if err != nil {
+		err := errors.New("查找用户失败")
+		return nil, err
+	}
+
+	err = base.Tx(func(runner *dbx.TxRunner) error {
+		dao := OrderDao{runner: runner}
 		order.HouseholdId = u.Id
 		order.HouseholdName = u.Name
 		order.CreatedAt = time.Now()
 		order.UpdatedAt = time.Now()
-		ordersss, err := dao.runner.Insert(order)
-		//OrderStage{
-		//	Stage: order.Stage
-		//	OrderId: ordersss
-		//}
-		//stageDao.Insert()
-		log.Error(ordersss)
+		order.Stage = 1
+		res, err := dao.runner.Insert(order)
+		order.Id, _ = res.LastInsertId()
+		if err != nil {
+			err := errors.New("查找用户失败")
+			log.Error(err)
+			return err
+		}
 
+		orderId, _ := res.LastInsertId()
+		orderStage := &OrderStage{
+			Stage:     order.Stage,
+			OrderId:   orderId,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			Note:      order.Note,
+		}
+
+		stageDao := OrderStageDao{runner: runner}
+		_, err = stageDao.Insert(orderStage)
+		order.OrderStage = &[]OrderStage{*orderStage}
 		return err
-
 	})
-	return err
+	return &order, err
 }
 
 func (o orderService) EditStage(stage OrderStage) error {
-
 	err := base.Tx(func(runner *dbx.TxRunner) error {
 		dao := OrderDao{runner: runner}
 		order := dao.GetOneByOrderId(stage.OrderId)
@@ -86,6 +96,7 @@ func (o orderService) EditStage(stage OrderStage) error {
 			err := errors.New("找不到订单")
 			return err
 		}
+
 		order.Stage = stage.Stage
 		update, err := dao.Update(order)
 		if update < 1 || err != nil {
@@ -96,17 +107,22 @@ func (o orderService) EditStage(stage OrderStage) error {
 		stageDao := OrderStageDao{runner: runner}
 		stage.UpdatedAt = time.Now()
 		stage.CreatedAt = time.Now()
-		stageDao.Insert(&stage)
-		return nil
+		_, err = stageDao.Insert(&stage)
+		return err
 	})
 	return err
 }
+
 func (o orderService) GetOrdersById(orderId int64) (order *Order, err error) {
-	dao := OrderDao{}
-	order = dao.GetOneByOrderId(orderId)
-	if order == nil {
-		err = errors.New("找不到订单")
-	}
+	err = base.Tx(func(runner *dbx.TxRunner) error {
+		dao := OrderDao{runner: runner}
+		order = dao.GetOneByOrderId(orderId)
+		if order == nil {
+			err := errors.New("找不到订单")
+			return err
+		}
+		return nil
+	})
 	return order, err
 }
 func (o orderService) TakeOrder(phone string, userType int, orderId int64) error {
@@ -136,13 +152,24 @@ func (o orderService) TakeOrder(phone string, userType int, orderId int64) error
 
 func (o orderService) TakeEvaluation(evaluation Evaluation) error {
 	err := base.Tx(func(runner *dbx.TxRunner) error {
+		// 评价
 		evaluationDao := EvaluationDao{runner: runner}
 		orderDao := OrderDao{runner: runner}
+		// 查看评价过了没
+		eval := evaluationDao.GetOneByOrderId(evaluation.OrderId)
+		if eval != nil {
+			err := errors.New("此订单已评价过")
+			return err
+		}
+		evaluation.CreatedAt = time.Now()
+		evaluation.UpdatedAt = time.Now()
 		evalId, err := evaluationDao.Insert(evaluation)
 		if err != nil {
+			log.Error(err)
 			err := errors.New("评价失败")
 			return err
 		}
+		// 更新订单
 		order := orderDao.GetOneByOrderId(evaluation.OrderId)
 		order.UpdatedAt = time.Now()
 		order.EvaluationId = evalId
@@ -151,7 +178,16 @@ func (o orderService) TakeEvaluation(evaluation Evaluation) error {
 			err := errors.New("订单评价更新失败")
 			return err
 		}
-		return nil
+		// 更新用户分数
+		userDao := users.UserDao{Runner: runner}
+		employee := userDao.GetOneById(evaluation.EmployeeId)
+		if employee == nil {
+			err := errors.New("订单还没被接，无法评价")
+			return err
+		}
+		employee.Score = employee.Score + evaluation.Level
+		_, err = userDao.Update(employee)
+		return err
 	})
 	return err
 }

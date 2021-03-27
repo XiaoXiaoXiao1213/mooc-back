@@ -47,11 +47,15 @@ func (a *OrderApi) createOrder(ctx iris.Context) {
 	phone := ctx.GetHeader("phone")
 	userType, _ := strconv.Atoi(ctx.GetHeader("user_type"))
 	user := users.User{Phone: phone, UserType: userType}
-	err = a.service.Create(order, user)
+	res, err := a.service.Create(order, user)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
 		logrus.Error(err)
+	}
+	r.Data = map[string]interface{}{
+		"order": res,
+		"token": refreshToken(ctx),
 	}
 	ctx.JSON(&r)
 }
@@ -61,9 +65,7 @@ func (a *OrderApi) evaluationOrder(ctx iris.Context) {
 		Code: base.ResCodeOk,
 	}
 
-	//获取请求参数
-	evalutaion := orders.Evaluation{}
-	err := ctx.ReadJSON(&evalutaion)
+	orderId, err := strconv.ParseInt(ctx.Params().Get("order_id"), 10, 64)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = "字段或字段值格式错误"
@@ -71,7 +73,26 @@ func (a *OrderApi) evaluationOrder(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-
+	order, err := orders.GetOrderService().GetOrdersById(orderId)
+	if err != nil {
+		r.Code = base.ResError
+		r.Message = "找不到该订单"
+		ctx.JSON(&r)
+		logrus.Error(err)
+		return
+	}
+	//获取请求参数
+	evalutaion := orders.Evaluation{}
+	err = ctx.ReadJSON(&evalutaion)
+	if err != nil {
+		r.Code = base.ResError
+		r.Message = "字段或字段值格式错误"
+		ctx.JSON(&r)
+		logrus.Error(err)
+		return
+	}
+	evalutaion.EmployeeId = order.EmployeeId
+	evalutaion.OrderId = orderId
 	err = a.service.TakeEvaluation(evalutaion)
 	if err != nil {
 		r.Code = base.ResError
@@ -115,6 +136,7 @@ func (a *OrderApi) editOrder(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
+
 	//获取请求参数
 	orderId := ctx.Params().Get("id")
 	id, err := strconv.ParseInt(orderId, 10, 64)
@@ -128,13 +150,14 @@ func (a *OrderApi) editOrder(ctx iris.Context) {
 
 	stage := orders.OrderStage{}
 	err = ctx.ReadJSON(&stage)
-	if err != nil {
+	if err != nil || stage.Stage == 0 || stage.OrderId == 0 {
 		r.Code = base.ResError
 		r.Message = "参数错误"
 		ctx.JSON(&r)
 		logrus.Error(err)
 		return
 	}
+
 	err = a.service.EditStage(stage)
 	if err != nil {
 		r.Code = base.ResError

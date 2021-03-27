@@ -14,11 +14,10 @@ func GetOrderService() OrderService {
 }
 
 type OrderService interface {
-	Create(order Order, user users.User) error
+	Create(order Order, user users.User) (*Order, error)
 	EditStage(stage OrderStage) error
 	TakeOrder(phone string, userType int, orderId int64) error
 	TakeEvaluation(evaluation Evaluation) error
 	GetOrdersByUser(userId int64) (finishOrders, doingOrders OrderSlice, err error)
 	GetOrdersById(orderId int64) (order *Order, err error)
-
 }

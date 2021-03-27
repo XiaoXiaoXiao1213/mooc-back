@@ -1,6 +1,7 @@
 package orders
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/tietang/dbx"
 )
 
@@ -21,7 +22,9 @@ func (dao *OrderDao) GetByUserId(userId int64) *[]Order {
 }
 func (dao *OrderDao) GetOneByOrderId(orderId int64) *Order {
 	form := &Order{}
-	ok, err := dao.runner.Get(form, "select * from order where id=?", orderId)
+	ok, err := dao.runner.Get(form, "select * from `order` where id=?", orderId)
+	log.Error("e",form)
+
 	if err != nil || !ok {
 		return nil
 	}

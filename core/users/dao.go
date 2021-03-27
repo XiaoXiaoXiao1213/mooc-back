@@ -12,9 +12,22 @@ type UserDao struct {
 // 通过手机号和类型获取用户
 func (dao *UserDao) GetOne(phone string, userType int) *User {
 	form := &User{}
-	logrus.Error(phone,userType)
 
 	ok, err := dao.Runner.Get(form, "select * from user where phone=? and user_type=?", phone, userType)
+	if err != nil || !ok {
+		logrus.Error(err)
+		return nil
+	}
+
+	return form
+}
+
+// 通过手机号和类型获取用户
+func (dao *UserDao) GetOneById(userId int64) *User {
+	form := &User{}
+	logrus.Error("userId",userId)
+
+	ok, err := dao.Runner.Get(form, "select * from user where id=?", userId)
 	if err != nil || !ok {
 		logrus.Error(err)
 		return nil

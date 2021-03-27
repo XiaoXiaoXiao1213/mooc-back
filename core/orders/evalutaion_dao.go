@@ -9,7 +9,7 @@ type EvaluationDao struct {
 }
 
 
-func (dao *EvaluationDao) GetOneByOrderId(orderId int) *Evaluation {
+func (dao *EvaluationDao) GetOneByOrderId(orderId int64) *Evaluation {
 	form := &Evaluation{}
 	ok, err := dao.runner.Get(form, "select * from evaluation where order_id=?", orderId)
 	if err != nil || !ok {
