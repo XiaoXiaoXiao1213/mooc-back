@@ -3,6 +3,8 @@ package houses
 import (
 	"errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/tietang/dbx"
+	"management/infra/base"
 	"sync"
 	"time"
 )
@@ -20,41 +22,52 @@ type houseService struct {
 }
 
 func (h houseService) SelectByHouseId(houseId string) (*House, error) {
-	dao := HouseDao{}
-	house := dao.GetHousesById(houseId)
-	if house == nil {
-		return nil, errors.New("该房子不存在")
-	}
-	return house, nil
+	var house *House
+	err := base.Tx(func(runner *dbx.TxRunner) error {
+		dao := HouseDao{runner: runner}
+		house = dao.GetHousesById(houseId)
+		if house == nil {
+			return errors.New("该房子不存在")
+		}
+		return nil
+	})
+	return house, err
 }
 
-func (h houseService) SelectByHouseholdId(household int) (*[]House, error) {
-	dao := HouseDao{}
-	houses := dao.GetUserHouses(household)
-	if houses == nil {
-		return nil, errors.New("该房子不存在")
-	}
-	return houses, nil
+func (h houseService) SelectByHouseholdId(household int) (houses *[]House, err error) {
+	err = base.Tx(func(runner *dbx.TxRunner) error {
+		dao := HouseDao{runner: runner}
+		houses = dao.GetUserHouses(household)
+		return nil
+	})
+	return
 
 }
-func (h houseService) Create(house House) error {
-	house.UpdatedAt = time.Now()
-	house.CreatedAt = time.Now()
-	dao := HouseDao{}
-	_, err := dao.runner.Insert(house)
-	if err != nil {
-		log.Error(err)
-	}
-	return err
+
+func (h houseService) Create(house House) (err error) {
+	err = base.Tx(func(runner *dbx.TxRunner) error {
+		house.UpdatedAt = time.Now()
+		house.CreatedAt = time.Now()
+		dao := HouseDao{runner: runner}
+		_, err := dao.runner.Insert(house)
+		if err != nil {
+			log.Error(err)
+		}
+		return err
+	})
+	return
 }
 
 func (h houseService) Update(house House) error {
-	house.UpdatedAt = time.Now()
-	dao := HouseDao{}
-	_, err := dao.runner.Update(house)
-	if err != nil {
-		log.Error(err)
-	}
+	err := base.Tx(func(runner *dbx.TxRunner) error {
+		house.UpdatedAt = time.Now()
+		dao := HouseDao{runner: runner}
+		_, err := dao.runner.Update(house)
+		if err != nil {
+			log.Error(err)
+		}
+		return err
+	})
 	return err
 
 }

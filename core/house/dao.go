@@ -1,6 +1,7 @@
 package houses
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/tietang/dbx"
 )
 
@@ -11,9 +12,9 @@ type HouseDao struct {
 // 通过用户获取房子
 func (dao *HouseDao) GetUserHouses(userId int) *[]House {
 	form := &[]House{}
-	ok, err := dao.runner.Get(form, "select * from house where household_id=?", userId)
-	if err != nil || !ok {
-		return nil
+	err := dao.runner.Find(form, "select * from house where household_id=?", userId)
+	if err != nil {
+		logrus.Error(err)
 	}
 	return form
 }

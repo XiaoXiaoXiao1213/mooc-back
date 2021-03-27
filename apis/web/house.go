@@ -68,7 +68,8 @@ func (h *HouseApi) register(ctx iris.Context) {
 	}
 
 	hou, err := h.service.SelectByHouseId(house.HouseId)
-	if err != nil || hou.HouseholdId != 0 {
+
+	if err != nil || hou == nil || hou.HouseholdId != 0 {
 		r.Code = base.ResError
 		r.Message = "该房子不存在或已经被注册"
 		ctx.JSON(&r)
