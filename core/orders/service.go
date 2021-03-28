@@ -25,6 +25,30 @@ func init() {
 type orderService struct {
 }
 
+func (o orderService) GetOrdersByCond(cond Order) (orders *[]Order, err error) {
+	_ = base.Tx(func(runner *dbx.TxRunner) error {
+		dao := OrderDao{runner: runner}
+		if cond.Page == 0 {
+			cond.Page = 1
+		}
+		if cond.PageSize < 1 || cond.PageSize > 10 {
+			cond.PageSize = 10
+		}
+		log.Error(cond)
+		orders = dao.GetByCond(cond)
+		if orders==nil{
+			return nil
+		}
+		stageDao := OrderStageDao{runner: runner}
+		for _, order := range *orders {
+			orderStage := stageDao.GetByOrderId(order.Id)
+			order.OrderStage = orderStage
+		}
+		return nil
+	})
+	return
+}
+
 func (o orderService) GetOrdersByUser(userId int64) (finishOrders, doingOrders OrderSlice, err error) {
 	var orders *[]Order
 	_ = base.Tx(func(runner *dbx.TxRunner) error {

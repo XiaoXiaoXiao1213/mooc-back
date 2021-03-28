@@ -20,4 +20,5 @@ type OrderService interface {
 	TakeEvaluation(evaluation Evaluation) error
 	GetOrdersByUser(userId int64) (finishOrders, doingOrders OrderSlice, err error)
 	GetOrdersById(orderId int64) (order *Order, err error)
+	GetOrdersByCond(cond Order) (order *[]Order, err error)
 }

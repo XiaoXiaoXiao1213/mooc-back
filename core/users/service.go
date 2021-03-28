@@ -77,7 +77,7 @@ func (u *userService) Create(user User) error {
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 	err := base.Tx(func(runner *dbx.TxRunner) error {
-		dao := UserDao{ runner}
+		dao := UserDao{runner}
 		_, err := dao.Runner.Insert(user)
 		if err != nil {
 			return err
@@ -104,10 +104,26 @@ func (u *userService) ResetPassword(user User) error {
 	}
 	return nil
 }
+func (u *userService) GetUserByCond(cond User) (*[]User, error) {
+	var users *[]User
+	_ = base.Tx(func(runner *dbx.TxRunner) error {
+		dao := UserDao{ runner}
+		if cond.Page == 0 {
+			cond.Page = 1
+		}
+		if cond.PageSize < 1 || cond.PageSize > 10 {
+			cond.PageSize = 10
+		}
+		users = dao.GetByCond(cond)
+
+		return nil
+	})
+	return users,nil
+}
 
 func (u *userService) GetUserByPhone(phone string, userType int) (user *User, err error) {
 	err = base.Tx(func(runner *dbx.TxRunner) error {
-		dao := UserDao{ runner}
+		dao := UserDao{runner}
 		log.Error(phone, userType)
 		user = dao.GetOne(phone, userType)
 		if user == nil {

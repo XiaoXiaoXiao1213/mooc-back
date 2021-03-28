@@ -93,7 +93,7 @@ func (u *UserApi) login(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-	user,err = u.service.Login(user.Phone, user.Password, user.UserType)
+	user, err = u.service.Login(user.Phone, user.Password, user.UserType)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
@@ -101,9 +101,11 @@ func (u *UserApi) login(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
+
 	token, _ := core.GenerateToken(*user)
-	r.Data = map[string]string{
-		"token": token,
+	r.Data = map[string]interface{}{
+		"token":            token,
+		"default_password": user.Password == user.Id_code[len(user.Id_code)-6:],
 	}
 	ctx.JSON(&r)
 

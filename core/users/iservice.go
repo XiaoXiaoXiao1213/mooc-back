@@ -20,6 +20,5 @@ type UserService interface {
 	Login(phone, password string, userType int) (*User,error)
 	ResetPassword(user User) error
 	GetUserByPhone(phone string, userType int) (*User, error)
-	//GetEnvelopeAccountByUserId(userId string) *AccountDTO
-	//GetAccount(accountNo string) *AccountDTO
+	GetUserByCond(user User) (*[]User, error)
 }
