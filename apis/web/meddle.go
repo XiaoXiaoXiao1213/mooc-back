@@ -9,7 +9,7 @@ import (
 )
 
 func loginMeddle(ctx iris.Context) {
-	token := ctx.GetHeader("authorization")
+	token := ctx.GetHeader("Authorization")
 	if token == "" {
 		r := base.Res{
 			Code:    base.ResError,
@@ -32,7 +32,7 @@ func loginMeddle(ctx iris.Context) {
 
 }
 func employeeMeddle(ctx iris.Context) {
-	token := ctx.GetHeader("authorization")
+	token := ctx.GetHeader("Authorization")
 	if token == "" {
 		r := base.Res{
 			Code:    base.ResError,
@@ -64,7 +64,7 @@ func employeeMeddle(ctx iris.Context) {
 
 
 func manamgeMeddle(ctx iris.Context) {
-	token := ctx.GetHeader("authorization")
+	token := ctx.GetHeader("Authorization")
 	if token == "" {
 		r := base.Res{
 			Code:    base.ResError,

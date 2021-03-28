@@ -53,9 +53,10 @@ func (a *OrderApi) createOrder(ctx iris.Context) {
 		r.Message = err.Error()
 		logrus.Error(err)
 	}
+	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
+
 	r.Data = map[string]interface{}{
 		"order": res,
-		"token": refreshToken(ctx),
 	}
 	ctx.JSON(&r)
 }
@@ -125,9 +126,10 @@ func (a *OrderApi) getOrderById(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
+	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
+
 	r.Data = map[string]interface{}{
 		"order": order,
-		"token": refreshToken(ctx),
 	}
 	ctx.JSON(&r)
 }
@@ -166,9 +168,7 @@ func (a *OrderApi) editOrder(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-	r.Data = map[string]interface{}{
-		"token": refreshToken(ctx),
-	}
+	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
 	ctx.JSON(&r)
 
 }

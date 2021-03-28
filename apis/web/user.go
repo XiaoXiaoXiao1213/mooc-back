@@ -103,8 +103,8 @@ func (u *UserApi) login(ctx iris.Context) {
 	}
 
 	token, _ := core.GenerateToken(*user)
+	ctx.ResponseWriter().Header().Set("token",token)
 	r.Data = map[string]interface{}{
-		"token":            token,
 		"default_password": user.Password == user.Id_code[len(user.Id_code)-6:],
 	}
 	ctx.JSON(&r)
@@ -126,9 +126,9 @@ func (u *UserApi) order(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
+	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
 
 	r.Data = map[string]interface{}{
-		"token":           refreshToken(ctx),
 		"processing_list": doingOrders,
 		"complete_list":   finishOrder,
 	}
@@ -176,8 +176,9 @@ func (u *UserApi) message(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
+	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
+
 	r.Data = map[string]interface{}{
-		"token": refreshToken(ctx),
 		"user":  user,
 	}
 	ctx.JSON(&r)
@@ -207,9 +208,8 @@ func (u *UserApi) personal(ctx iris.Context) {
 		r.Message = err.Error()
 		logrus.Error(err)
 	}
-
+	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
 	r.Data = map[string]interface{}{
-		"token": refreshToken(ctx),
 		"user":  user,
 	}
 	ctx.JSON(&r)
@@ -240,10 +240,8 @@ func (u *UserApi) click(ctx iris.Context) {
 		r.Message = "打卡失败"
 		logrus.Error(err)
 	}
+	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
 
-	r.Data = map[string]interface{}{
-		"token": refreshToken(ctx),
-	}
 	ctx.JSON(&r)
 }
 

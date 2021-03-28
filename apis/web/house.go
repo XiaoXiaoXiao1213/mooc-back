@@ -19,8 +19,8 @@ type HouseApi struct {
 func (h *HouseApi) Init() {
 	h.service = houses.GetHouseService()
 	groupRouter := base.Iris().Party("/api/1.0/house")
-	groupRouter.Post("/create", h.create)
-	groupRouter.Post("/register", h.register)
+	groupRouter.Post("/create", employeeMeddle, h.create)
+	groupRouter.Post("/register", employeeMeddle, h.register)
 }
 
 // 创建房子

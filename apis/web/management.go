@@ -63,9 +63,9 @@ func (u *ManageApi) getOrder(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
+	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
 
 	r.Data = map[string]interface{}{
-		"token":  refreshToken(ctx),
 		"orders": orders,
 	}
 	ctx.JSON(&r)
@@ -107,8 +107,9 @@ func (u *ManageApi) getUser(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
+	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
+
 	r.Data = map[string]interface{}{
-		"token": refreshToken(ctx),
 		"users": users,
 	}
 	ctx.JSON(&r)
