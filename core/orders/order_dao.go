@@ -20,6 +20,16 @@ func (dao *OrderDao) GetByUserId(userId int64) *[]Order {
 	return &form
 }
 
+func (dao *OrderDao) GetByEmployeeId(employeeId int64) *[]Order {
+	form := []Order{}
+	err := dao.runner.Find(&form, "select * from `order` where employee_id=?", employeeId)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	return &form
+}
+
 func (dao *OrderDao) GetByCond(order Order) *[]Order {
 	form := []Order{}
 	sql := "select * from `order` where 1"

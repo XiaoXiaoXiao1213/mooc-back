@@ -2,12 +2,12 @@ package web
 
 import (
 	"github.com/kataras/iris"
+	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
 	"management/core/orders"
 	"management/core/users"
 	"management/infra"
 	"management/infra/base"
-	"strconv"
 )
 
 func init() {
@@ -23,8 +23,8 @@ func (u *ManageApi) Init() {
 	u.orderService = orders.GetOrderService()
 	u.userService = users.GetUserService()
 	groupRouter := base.Iris().Party("/api/1.0/management")
-	groupRouter.Get("/order/{page}/{page_size}", manamgeMeddle, u.getOrder)
-	groupRouter.Get("/user/{page}/{page_size}", manamgeMeddle, u.getUser)
+	groupRouter.Get("/order", manamgeMeddle, u.getOrder)
+	groupRouter.Get("/user", manamgeMeddle, u.getUser)
 
 }
 
@@ -32,19 +32,10 @@ func (u *ManageApi) getOrder(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
-	page, err1 := strconv.Atoi(ctx.Params().Get("page"))
-	pageSize, err2 := strconv.Atoi(ctx.Params().Get("page_size"))
-
-	if err1 != nil || err2 != nil {
-		r.Code = base.ResError
-		r.Message = "字段或字段值格式错误"
-		ctx.JSON(&r)
-		logrus.Error(err1, err2)
-		return
-	}
 	//获取请求参数
 	order := orders.Order{}
-	err := ctx.ReadJSON(&order)
+	err := ctx.ReadForm(&order)
+	log.Error(order)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = "字段或字段值格式错误"
@@ -52,9 +43,6 @@ func (u *ManageApi) getOrder(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-	order.Page = page
-	order.PageSize = pageSize
-
 	orders, err := u.orderService.GetOrdersByCond(order)
 	if err != nil {
 		r.Code = base.ResError
@@ -64,7 +52,6 @@ func (u *ManageApi) getOrder(ctx iris.Context) {
 		return
 	}
 	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
-
 	r.Data = map[string]interface{}{
 		"orders": orders,
 	}
@@ -76,18 +63,9 @@ func (u *ManageApi) getUser(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
-	page, err1 := strconv.Atoi(ctx.Params().Get("page"))
-	pageSize, err2 := strconv.Atoi(ctx.Params().Get("page_size"))
-	if err1 != nil || err2 != nil {
-		r.Code = base.ResError
-		r.Message = "字段或字段值格式错误"
-		ctx.JSON(&r)
-		logrus.Error(err1, err2)
-		return
-	}
 	//获取请求参数
 	user := users.User{}
-	err := ctx.ReadJSON(&user)
+	err := ctx.ReadForm(&user)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = "字段或字段值格式错误"
@@ -95,10 +73,6 @@ func (u *ManageApi) getUser(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-
-	user.Page = page
-	user.PageSize = pageSize
-
 	users, err := u.userService.GetUserByCond(user)
 	if err != nil {
 		r.Code = base.ResError

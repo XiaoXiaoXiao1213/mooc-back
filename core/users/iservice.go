@@ -20,5 +20,6 @@ type UserService interface {
 	Login(phone, password string, userType int) (*User,error)
 	ResetPassword(user User) error
 	GetUserByPhone(phone string, userType int) (*User, error)
+	GetUserById(userId int64) (*User, error)
 	GetUserByCond(user User) (*[]User, error)
 }

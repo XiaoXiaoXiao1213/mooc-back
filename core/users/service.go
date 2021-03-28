@@ -80,6 +80,17 @@ func (u *userService) Create(user User) error {
 		dao := UserDao{runner}
 		_, err := dao.Runner.Insert(user)
 		if err != nil {
+			log.Error(err)
+			return err
+		}
+		// 创建员工关联表
+		score := EmployeeScore{
+			EmployeeId: user.Id,
+		}
+		scoreDao := EmployeeScoreDao{runner}
+		_, err = scoreDao.Insert(&score)
+		if err != nil {
+			log.Error(err)
 			return err
 		}
 		return nil
@@ -107,7 +118,7 @@ func (u *userService) ResetPassword(user User) error {
 func (u *userService) GetUserByCond(cond User) (*[]User, error) {
 	var users *[]User
 	_ = base.Tx(func(runner *dbx.TxRunner) error {
-		dao := UserDao{ runner}
+		dao := UserDao{runner}
 		if cond.Page == 0 {
 			cond.Page = 1
 		}
@@ -118,7 +129,7 @@ func (u *userService) GetUserByCond(cond User) (*[]User, error) {
 
 		return nil
 	})
-	return users,nil
+	return users, nil
 }
 
 func (u *userService) GetUserByPhone(phone string, userType int) (user *User, err error) {
@@ -126,6 +137,20 @@ func (u *userService) GetUserByPhone(phone string, userType int) (user *User, er
 		dao := UserDao{runner}
 		log.Error(phone, userType)
 		user = dao.GetOne(phone, userType)
+		if user == nil {
+			err := errors.New("用户不存在")
+			log.Error(err)
+			return err
+		}
+		return nil
+
+	})
+	return user, err
+}
+func (u *userService) GetUserById(userId int64) (user *User, err error) {
+	err = base.Tx(func(runner *dbx.TxRunner) error {
+		dao := UserDao{runner}
+		user = dao.GetOneById(userId)
 		if user == nil {
 			err := errors.New("用户不存在")
 			log.Error(err)
