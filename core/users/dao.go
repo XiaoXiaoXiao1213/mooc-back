@@ -36,14 +36,15 @@ func (dao *UserDao) GetByCond(user User) *[]User {
 		sql = sql + " and sex=" + strconv.Itoa(user.Sex)
 	}
 	if user.Id_code != "" {
-		sql = sql + " and id_code=\"%" + user.Id_code + "%\""
+		sql = sql + " and id_code like\"%" + user.Id_code + "%\""
 	}
 	if user.Name != "" {
-		sql = sql + " and name=\"%" + user.Name + "%\""
+		sql = sql + " and name like\"%" + user.Name + "%\""
 	}
 	if user.UserType != 0 {
 		sql = sql + " and user_type=" + strconv.Itoa(user.UserType)
 	}
+	log.Error(sql)
 	err := dao.Runner.Find(&form, sql+" limit ?,?", user.Page-1, user.PageSize)
 	if err != nil {
 		log.Error(err)
