@@ -43,7 +43,7 @@ func (u *ManageApi) getOrder(ctx iris.Context) {
 		return
 	}
 
-	orders, err := u.orderService.GetOrdersByCond(orderCond)
+	orders, count,err := u.orderService.GetOrdersByCond(orderCond)
 	if err != nil {
 		logrus.Error(err)
 		r.Code = base.ResError
@@ -55,6 +55,7 @@ func (u *ManageApi) getOrder(ctx iris.Context) {
 	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
 	r.Data = map[string]interface{}{
 		"orders": orders,
+		"total" :count,
 	}
 	ctx.JSON(&r)
 }
@@ -75,7 +76,7 @@ func (u *ManageApi) getUser(ctx iris.Context) {
 		return
 	}
 
-	users, err := u.userService.GetUserByCond(userCond)
+	users, total, err := u.userService.GetUserByCond(userCond)
 	if err != nil {
 		logrus.Error(err)
 		r.Code = base.ResError
@@ -87,6 +88,7 @@ func (u *ManageApi) getUser(ctx iris.Context) {
 	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
 	r.Data = map[string]interface{}{
 		"users": users,
+		"total":total,
 	}
 	ctx.JSON(&r)
 }

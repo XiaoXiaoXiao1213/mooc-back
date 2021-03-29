@@ -26,7 +26,7 @@ func init() {
 type orderService struct {
 }
 
-func (o orderService) GetOrdersByCond(cond Order) (orders *[]Order, err error) {
+func (o orderService) GetOrdersByCond(cond Order) (orders *[]Order, count int, err error) {
 	_ = base.Tx(func(runner *dbx.TxRunner) error {
 		dao := OrderDao{runner: runner}
 		if cond.Page == 0 {
@@ -36,7 +36,7 @@ func (o orderService) GetOrdersByCond(cond Order) (orders *[]Order, err error) {
 			cond.PageSize = 10
 		}
 		log.Error(cond)
-		orders = dao.GetByCond(cond)
+		orders, count = dao.GetByCond(cond)
 		if orders == nil {
 			return nil
 		}

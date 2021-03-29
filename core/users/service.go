@@ -115,8 +115,9 @@ func (u *userService) ResetPassword(user User) error {
 	}
 	return nil
 }
-func (u *userService) GetUserByCond(cond User) (*[]User, error) {
+func (u *userService) GetUserByCond(cond User) (*[]User, int, error) {
 	var users *[]User
+	var total int
 	_ = base.Tx(func(runner *dbx.TxRunner) error {
 		dao := UserDao{runner}
 		if cond.Page == 0 {
@@ -125,11 +126,11 @@ func (u *userService) GetUserByCond(cond User) (*[]User, error) {
 		if cond.PageSize < 1 || cond.PageSize > 10 {
 			cond.PageSize = 10
 		}
-		users = dao.GetByCond(cond)
+		users, total = dao.GetByCond(cond)
 
 		return nil
 	})
-	return users, nil
+	return users, total, nil
 }
 
 func (u *userService) GetUserByPhone(phone string, userType int) (user *User, err error) {

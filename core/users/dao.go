@@ -23,34 +23,39 @@ func (dao *UserDao) GetOne(phone string, userType int) *User {
 
 	return form
 }
-func (dao *UserDao) GetByCond(user User) *[]User {
+func (dao *UserDao) GetByCond(user User) (*[]User, int) {
 	form := []User{}
 	sql := "select * from `user` where 1"
 	if user.Id != 0 {
-		sql = sql + " and id=" + strconv.FormatInt(user.Id, 10)
+		sql += " and id=" + strconv.FormatInt(user.Id, 10)
 	}
 	if user.SuperState != 0 {
-		sql = sql + " and super_state=" + strconv.Itoa(user.SuperState)
+		sql += " and super_state=" + strconv.Itoa(user.SuperState)
 	}
 	if user.Sex != 0 {
-		sql = sql + " and sex=" + strconv.Itoa(user.Sex)
+		sql += " and sex=" + strconv.Itoa(user.Sex)
 	}
 	if user.Id_code != "" {
-		sql = sql + " and id_code like\"%" + user.Id_code + "%\""
+		sql += " and id_code like\"%" + user.Id_code + "%\""
 	}
 	if user.Name != "" {
-		sql = sql + " and name like\"%" + user.Name + "%\""
+		sql += " and name like\"%" + user.Name + "%\""
 	}
 	if user.UserType != 0 {
-		sql = sql + " and user_type=" + strconv.Itoa(user.UserType)
+		sql += " and user_type=" + strconv.Itoa(user.UserType)
 	}
-	log.Error(sql)
-	err := dao.Runner.Find(&form, sql+" limit ?,?", user.Page-1, user.PageSize)
+	err := dao.Runner.Find(&form, sql)
 	if err != nil {
 		log.Error(err)
-		return nil
+		return nil, 0
 	}
-	return &form
+	count := len(form)
+	err = dao.Runner.Find(&form, sql+" limit ?,?", user.Page-1, user.PageSize)
+	if err != nil {
+		log.Error(err)
+		return nil,0
+	}
+	return &form, count
 }
 
 // 通过手机号和类型获取用户

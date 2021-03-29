@@ -30,43 +30,44 @@ func (dao *OrderDao) GetByEmployeeId(employeeId int64) *[]Order {
 	return &form
 }
 
-func (dao *OrderDao) GetByCond(order Order) *[]Order {
+func (dao *OrderDao) GetByCond(order Order) (*[]Order, int) {
 	form := []Order{}
 	sql := "select * from `order` where 1"
 	if order.Id != 0 {
-		sql = sql + " and id=" + strconv.FormatInt(order.Id, 10)
+		sql += " and id=" + strconv.FormatInt(order.Id, 10)
 	}
 	if order.HouseholdId != 0 {
-		sql = sql + " and household_id=" + strconv.FormatInt(order.HouseholdId, 10)
+		sql += " and household_id=" + strconv.FormatInt(order.HouseholdId, 10)
 	}
 	if order.HouseId != 0 {
-		sql = sql + " and house_id=" + strconv.FormatInt(order.HouseId, 10)
+		sql += " and house_id=" + strconv.FormatInt(order.HouseId, 10)
 	}
 	if order.EmployeeId != 0 {
-		sql = sql + " and employee_id=" + strconv.FormatInt(order.EmployeeId, 10)
+		sql += " and employee_id=" + strconv.FormatInt(order.EmployeeId, 10)
 	}
 	if order.Type != "" {
-		sql = sql + " and type=\"" + order.Type + "\""
+		sql += " and type=\"" + order.Type + "\""
 	}
 	if order.Emergency != 0 {
-		sql = sql + " and emergency=" + strconv.Itoa(order.Emergency)
+		sql += " and emergency=" + strconv.Itoa(order.Emergency)
 
 	}
 	if order.Stage != 0 {
-		sql = sql + " and stage=" + strconv.Itoa(order.Stage)
-
+		sql += " and stage=" + strconv.Itoa(order.Stage)
 	}
-	log.Error(sql)
-	err := dao.runner.Find(&form, sql+" limit ?,?", order.Page-1, order.PageSize)
+	err := dao.runner.Find(&form, sql)
 	if err != nil {
 		log.Error(err)
-		return nil
+		return nil, 0
 	}
-	log.Error(len(form))
-
-	return &form
+	count := len(form)
+	err = dao.runner.Find(&form, sql+" limit ?,?", order.Page-1, order.PageSize)
+	if err != nil {
+		log.Error(err)
+		return nil, 0
+	}
+	return &form, count
 }
-
 func (dao *OrderDao) GetOneByOrderId(orderId int64) *Order {
 	form := &Order{}
 	ok, err := dao.runner.Get(form, "select * from `order` where id=?", orderId)
