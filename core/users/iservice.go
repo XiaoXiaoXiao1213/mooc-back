@@ -22,4 +22,6 @@ type UserService interface {
 	GetUserByPhone(phone string, userType int) (*User, error)
 	GetUserById(userId int64) (*User, error)
 	GetUserByCond(user User) (*[]User,int, error)
+	DeleteUserById(userId int64) (err error)
+
 }

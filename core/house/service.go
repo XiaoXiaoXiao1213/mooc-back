@@ -71,3 +71,32 @@ func (h houseService) Update(house *House) error {
 	return err
 
 }
+
+func (h houseService) DeleteHousesByHouseId(houseId string) (err error) {
+	_ = base.Tx(func(runner *dbx.TxRunner) error {
+		dao := HouseDao{runner: runner}
+		_, err := dao.DeleteByHouseId(houseId)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		return nil
+	})
+	return
+}
+
+func (h houseService) GetHousesByCond(cond House) (orders *[]House, count int, err error) {
+	_ = base.Tx(func(runner *dbx.TxRunner) error {
+		dao := HouseDao{runner: runner}
+		if cond.Page == 0 {
+			cond.Page = 1
+		}
+		if cond.PageSize < 1 || cond.PageSize > 10 {
+			cond.PageSize = 10
+		}
+		log.Error(cond)
+		orders, count = dao.GetByCond(cond)
+		return nil
+	})
+	return
+}

@@ -53,7 +53,7 @@ func (dao *UserDao) GetByCond(user User) (*[]User, int) {
 	err = dao.Runner.Find(&form, sql+" limit ?,?", user.Page-1, user.PageSize)
 	if err != nil {
 		log.Error(err)
-		return nil,0
+		return nil, 0
 	}
 	return &form, count
 }
@@ -82,6 +82,14 @@ func (dao *UserDao) Insert(form *User) (int64, error) {
 
 func (dao *UserDao) Update(user *User) (int64, error) {
 	rs, err := dao.Runner.Update(user)
+	if err != nil {
+		return 0, err
+	}
+	return rs.RowsAffected()
+}
+
+func (dao *UserDao) DeleteByUserId(userId int64) (int64, error) {
+	rs, err := dao.Runner.Exec("delete from user where id=? limit 1", userId)
 	if err != nil {
 		return 0, err
 	}

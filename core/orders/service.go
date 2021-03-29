@@ -26,6 +26,35 @@ func init() {
 type orderService struct {
 }
 
+func (o orderService) DeleteOrdersById(orderId int64) (err error) {
+	err = base.Tx(func(runner *dbx.TxRunner) error {
+		dao := OrderDao{runner: runner}
+		// 获取订单
+		order := dao.GetOneByOrderId(orderId)
+		if order == nil {
+			return errors.New("订单查找失败")
+		}
+		// 如果订单还在进行中，那么删除用户正在做的订单数
+		if order.Stage < 5 && order.EmployeeId != 0 {
+			scoreDao := users.EmployeeScoreDao{Runner: runner}
+			employee := scoreDao.GetByEmployeeId(order.EmployeeId)
+			if employee == nil {
+				return errors.New("用户查找失败")
+
+			}
+			employee.DoingOrder -= 1
+			scoreDao.Update(employee)
+		}
+		_, err := dao.DeleteByOrderId(orderId)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		return nil
+	})
+	return err
+}
+
 func (o orderService) GetOrdersByCond(cond Order) (orders *[]Order, count int, err error) {
 	_ = base.Tx(func(runner *dbx.TxRunner) error {
 		dao := OrderDao{runner: runner}

@@ -94,3 +94,12 @@ func (dao *OrderDao) Update(order *Order) (int64, error) {
 	}
 	return rs.RowsAffected()
 }
+
+
+func (dao *OrderDao) DeleteByOrderId(orderId int64) (int64, error) {
+	rs, err := dao.runner.Exec("delete from `order` where id=? limit 1",orderId)
+	if err != nil {
+		return 0, err
+	}
+	return rs.RowsAffected()
+}

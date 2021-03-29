@@ -132,6 +132,18 @@ func (u *userService) GetUserByCond(cond User) (*[]User, int, error) {
 	})
 	return users, total, nil
 }
+func (u *userService) DeleteUserById(userId int64) (err error) {
+	err = base.Tx(func(runner *dbx.TxRunner) error {
+		dao := UserDao{runner}
+		_, err := dao.DeleteByUserId(userId)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		return nil
+	})
+	return err
+}
 
 func (u *userService) GetUserByPhone(phone string, userType int) (user *User, err error) {
 	err = base.Tx(func(runner *dbx.TxRunner) error {
