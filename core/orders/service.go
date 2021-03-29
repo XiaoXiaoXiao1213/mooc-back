@@ -83,49 +83,56 @@ func (o orderService) GetOrdersByUser(userId int64, userType int) (finishOrders,
 
 // 创建订单
 func (o orderService) Create(order Order, user users.User) (*Order, error) {
-	// 1. 查找用户
-	u, err := users.GetUserService().GetUserByPhone(user.Phone, user.UserType)
-	if err != nil {
-		err := errors.New("查找用户失败")
-		return nil, err
-	}
+	err := base.Tx(func(runner *dbx.TxRunner) error {
+		// 1. 查找用户
+		userDao := users.UserDao{runner}
+		user := userDao.GetOne(user.Phone, user.UserType)
+		if user == nil {
+			err := errors.New("查找用户失败")
+			return err
+		}
 
-	err = base.Tx(func(runner *dbx.TxRunner) error {
 		// 2. 创建订单
 		dao := OrderDao{runner: runner}
-		order.HouseholdId = u.Id
-		order.HouseholdName = u.Name
+		order.HouseholdId = user.Id
+		order.HouseholdName = user.Name
 		order.CreatedAt = time.Now()
 		order.UpdatedAt = time.Now()
 		order.Stage = 1
-		res, err := dao.runner.Insert(order)
+		orderId, err := dao.Insert(&order)
 		if err != nil {
 			log.Error(err)
 			err := errors.New("创建订单失败")
 			return err
 		}
+
 		// 3.创建订单阶段
-		order.Id, _ = res.LastInsertId()
 		orderStage := &OrderStage{
 			Stage:     order.Stage,
-			OrderId:   order.Id,
+			OrderId:   orderId,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 			Note:      order.Note,
 		}
-		stageDao := OrderStageDao{runner: runner}
+		stageDao := OrderStageDao{runner}
 		_, err = stageDao.Insert(orderStage)
 		if err != nil {
 			log.Error(err)
 			err := errors.New("创建订单失败")
 			return err
 		}
-
+		order.OrderStage = &[]OrderStage{*orderStage}
 		// 4.分配/抢单
 		scoreDao := users.EmployeeScoreDao{Runner: runner}
 		if order.Emergency == 1 { // 非紧急，直接分配
 			employee := scoreDao.GetNonUrgentEmployee()
 			if employee == nil {
+				return errors.New("分配员工失败")
+			}
+
+			order.EmployeeId = employee.EmployeeId
+			_, err = dao.Update(&order)
+			if err != nil {
 				log.Error(err)
 				err := errors.New("分配员工失败")
 				return err
@@ -134,26 +141,20 @@ func (o orderService) Create(order Order, user users.User) (*Order, error) {
 			employee.DoingOrder += 1
 			employee.DifficultScore += order.Level
 			employee.NonUrgentScore, employee.UrgentScore = common.AllocationAlgorithm(*employee)
-			order.EmployeeId = employee.EmployeeId
-			_, err = dao.Update(&order)
-			if err != nil {
-				log.Error(err)
-				err := errors.New("分配员工失败")
-				return err
-			}
 			_, err = scoreDao.Update(employee)
 			if err != nil {
 				log.Error(err)
 				err := errors.New("分配员工失败")
 				return err
 			}
+
 			// 邮件通知
-			u, err = users.GetUserService().GetUserById(employee.EmployeeId)
-			if err != nil || u == nil {
+			user = userDao.GetOneById(employee.EmployeeId)
+			if user == nil {
 				err := errors.New("查找员工失败")
 				return err
 			}
-			common.SendMail(u.Email, "内容", "内容")
+			common.SendMail(user.Email, "内容", "内容")
 		} else {
 			employees := scoreDao.GetUrgentEmployee()
 			if employees == nil {
@@ -162,15 +163,16 @@ func (o orderService) Create(order Order, user users.User) (*Order, error) {
 				return err
 			}
 			for _, employee := range *employees {
-				u, err = users.GetUserService().GetUserById(employee.EmployeeId)
-				if err != nil || u == nil {
+				user = userDao.GetOneById(employee.EmployeeId)
+				if user == nil {
 					err := errors.New("查找员工失败")
 					return err
 				}
+				// TODO 员工和订单要关联起来
+				common.SendMail(user.Email, "内容", "内容")
+
 			}
-			common.SendMail(u.Email, "内容", "内容")
 		}
-		order.OrderStage = &[]OrderStage{*orderStage}
 		return err
 	})
 	return &order, err
@@ -188,20 +190,19 @@ func (o orderService) EditStage(stage OrderStage) error {
 			scoreDao := users.EmployeeScoreDao{Runner: runner}
 			employee := scoreDao.GetByEmployeeId(order.EmployeeId)
 			if employee == nil {
-				err := errors.New("找不到员工")
-				log.Error(err)
-				return err
+				return errors.New("找不到该订单对应的员工")
 			}
+
 			employee.DoingOrder -= 1
-			order.EmployeeId = employee.EmployeeId
 			_, err := scoreDao.Update(employee)
 			if err != nil {
 				log.Error(err)
-				err := errors.New("更新员工单数失败")
+				err := errors.New("更新员工订单数失败")
 				return err
 			}
 		}
 		order.Stage = stage.Stage
+		order.UpdatedAt = time.Now()
 		update, err := dao.Update(order)
 		if update < 1 || err != nil {
 			err := errors.New("订单进度更新失败")

@@ -38,10 +38,10 @@ func (a *OrderApi) createOrder(ctx iris.Context) {
 	order := orders.Order{}
 	err := ctx.ReadJSON(&order)
 	if err != nil {
+		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = "字段或字段值格式错误"
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
 
@@ -50,18 +50,22 @@ func (a *OrderApi) createOrder(ctx iris.Context) {
 	userType, _ := strconv.Atoi(ctx.GetHeader("user_type"))
 	user := users.User{Phone: phone, UserType: userType}
 	res, err := a.service.Create(order, user)
+
+	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
 	if err != nil {
+		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = err.Error()
-		logrus.Error(err)
+		return
 	}
-	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
 
 	r.Data = map[string]interface{}{
 		"order": res,
 	}
 	ctx.JSON(&r)
 }
+
+// TODO 抢单
 func (a *OrderApi) takeOrder(ctx iris.Context) {
 	//r := base.Res{
 	//	Code: base.ResCodeOk,
@@ -103,44 +107,54 @@ func (a *OrderApi) takeOrder(ctx iris.Context) {
 	//ctx.JSON(&r)
 }
 
+// 评价订单
 func (a *OrderApi) evaluationOrder(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
-
+	// 获取订单
 	orderId, err := strconv.ParseInt(ctx.Params().Get("order_id"), 10, 64)
 	if err != nil {
+		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = "字段或字段值格式错误"
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
+
 	order, err := a.service.GetOrdersById(orderId)
 	if err != nil {
+		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = "找不到该订单"
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
+	if order.EvaluationId != 0 {
+		r.Code = base.ResError
+		r.Message = "该订单已评价"
+		ctx.JSON(&r)
+		return
+	}
+
 	//获取请求参数
 	evalutaion := orders.Evaluation{}
 	err = ctx.ReadJSON(&evalutaion)
 	if err != nil {
+		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = "字段或字段值格式错误"
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
+
 	evalutaion.EmployeeId = order.EmployeeId
 	evalutaion.OrderId = orderId
 	err = a.service.TakeEvaluation(evalutaion)
 	if err != nil {
+		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = err.Error()
-		logrus.Error(err)
 	}
 	ctx.JSON(&r)
 }
@@ -168,7 +182,7 @@ func (a *OrderApi) getOrderById(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
+	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
 
 	r.Data = map[string]interface{}{
 		"order": order,
@@ -210,7 +224,6 @@ func (a *OrderApi) editOrder(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
+	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
 	ctx.JSON(&r)
-
 }

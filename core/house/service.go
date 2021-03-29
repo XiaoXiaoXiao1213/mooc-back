@@ -44,7 +44,7 @@ func (h houseService) SelectByHouseholdId(household int) (houses *[]House, err e
 
 }
 
-func (h houseService) Create(house House) (err error) {
+func (h houseService) Create(house *House) (err error) {
 	err = base.Tx(func(runner *dbx.TxRunner) error {
 		house.UpdatedAt = time.Now()
 		house.CreatedAt = time.Now()
@@ -58,7 +58,7 @@ func (h houseService) Create(house House) (err error) {
 	return
 }
 
-func (h houseService) Update(house House) error {
+func (h houseService) Update(house *House) error {
 	err := base.Tx(func(runner *dbx.TxRunner) error {
 		house.UpdatedAt = time.Now()
 		dao := HouseDao{runner: runner}

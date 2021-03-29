@@ -12,10 +12,8 @@
   <component name="ChangeListManager">
     <list default="true" id="f846a5ae-8a2d-469d-9e46-42c440f17d04" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apis/web/house.go" beforeDir="false" afterPath="$PROJECT_DIR$/apis/web/house.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apis/web/management.go" beforeDir="false" afterPath="$PROJECT_DIR$/apis/web/management.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apis/web/meddle.go" beforeDir="false" afterPath="$PROJECT_DIR$/apis/web/meddle.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/house/iservice.go" beforeDir="false" afterPath="$PROJECT_DIR$/core/house/iservice.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/apis/web/order.go" beforeDir="false" afterPath="$PROJECT_DIR$/apis/web/order.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/orders/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/core/orders/service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -194,6 +192,16 @@
           <url>file://$PROJECT_DIR$/apis/web/house.go</url>
           <line>26</line>
           <option name="timeStamp" value="13" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/apis/web/meddle.go</url>
+          <line>30</line>
+          <option name="timeStamp" value="14" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/core/orders/service.go</url>
+          <line>84</line>
+          <option name="timeStamp" value="15" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
