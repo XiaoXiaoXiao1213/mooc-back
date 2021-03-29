@@ -186,6 +186,10 @@ func (o orderService) EditStage(stage OrderStage) error {
 			err := errors.New("找不到订单")
 			return err
 		}
+		if order.Stage >= 5 && stage.Stage < 5 {
+			err := errors.New("该订单已完成，不能修改为进行中")
+			return err
+		}
 		if order.Stage < 5 && (stage.Stage >= 5) {
 			scoreDao := users.EmployeeScoreDao{Runner: runner}
 			employee := scoreDao.GetByEmployeeId(order.EmployeeId)
@@ -201,6 +205,7 @@ func (o orderService) EditStage(stage OrderStage) error {
 				return err
 			}
 		}
+
 		order.Stage = stage.Stage
 		order.UpdatedAt = time.Now()
 		update, err := dao.Update(order)
@@ -257,7 +262,6 @@ func (o orderService) TakeOrder(phone string, userType int, orderId int64) error
 
 func (o orderService) TakeEvaluation(evaluation Evaluation) error {
 	err := base.Tx(func(runner *dbx.TxRunner) error {
-		// 评价
 		evaluationDao := EvaluationDao{runner: runner}
 		orderDao := OrderDao{runner: runner}
 		// 查看评价过了没
@@ -266,6 +270,13 @@ func (o orderService) TakeEvaluation(evaluation Evaluation) error {
 			err := errors.New("此订单已评价过")
 			return err
 		}
+		// 查看订单完成了没
+		order := orderDao.GetOneByOrderId(evaluation.OrderId)
+		if order.Stage < 5 {
+			err := errors.New("订单未完成，无法评价")
+			return err
+		}
+
 		evaluation.CreatedAt = time.Now()
 		evaluation.UpdatedAt = time.Now()
 		evalId, err := evaluationDao.Insert(evaluation)
@@ -274,8 +285,8 @@ func (o orderService) TakeEvaluation(evaluation Evaluation) error {
 			err := errors.New("评价失败")
 			return err
 		}
-		// 更新订单
-		order := orderDao.GetOneByOrderId(evaluation.OrderId)
+
+		order.Stage = 7
 		order.UpdatedAt = time.Now()
 		order.EvaluationId = evalId
 		update, err := orderDao.Update(order)
@@ -283,15 +294,27 @@ func (o orderService) TakeEvaluation(evaluation Evaluation) error {
 			err := errors.New("订单评价更新失败")
 			return err
 		}
+
 		// 更新用户分数
 		userDao := users.UserDao{Runner: runner}
+		scoreDao := users.EmployeeScoreDao{Runner: runner}
 		employee := userDao.GetOneById(evaluation.EmployeeId)
-		if employee == nil {
-			err := errors.New("订单还没被接，无法评价")
+		employeeScore := scoreDao.GetByEmployeeId(evaluation.EmployeeId)
+
+		if employee == nil || employeeScore == nil {
+			err := errors.New("找不到员工，无法评价")
 			return err
 		}
-		employee.Score = employee.Score + evaluation.Level
+		employee.Score += evaluation.Level
 		_, err = userDao.Update(employee)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		employeeScore.OrderScore += evaluation.Level
+		employeeScore.OrderCount += 1
+		employeeScore.UrgentScore, employeeScore.UrgentScore = common.AllocationAlgorithm(*employeeScore)
+		_, err = scoreDao.Update(employeeScore)
 		return err
 	})
 	return err

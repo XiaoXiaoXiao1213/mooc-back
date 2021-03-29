@@ -9,7 +9,8 @@ import (
 )
 
 func main() {
-	//获取程序运行文件所在的路径
+	//common.Hset("key", "123","234","224")
+//	获取程序运行文件所在的路径
 	file := kvs.GetCurrentFilePath("config.ini", 1)
 	//加载和解析配置文件
 	conf := ini.NewIniFileCompositeConfigSource(file)

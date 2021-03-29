@@ -130,6 +130,7 @@ func (a *OrderApi) evaluationOrder(ctx iris.Context) {
 		ctx.JSON(&r)
 		return
 	}
+
 	if order.EvaluationId != 0 {
 		r.Code = base.ResError
 		r.Message = "该订单已评价"
@@ -156,6 +157,7 @@ func (a *OrderApi) evaluationOrder(ctx iris.Context) {
 		r.Code = base.ResError
 		r.Message = err.Error()
 	}
+	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
 	ctx.JSON(&r)
 }
 
@@ -170,20 +172,18 @@ func (a *OrderApi) getOrderById(ctx iris.Context) {
 		r.Code = base.ResError
 		r.Message = "参数错误"
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
 
 	order, err := a.service.GetOrdersById(id)
 	if err != nil {
+		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = "找不到订单"
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
 	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
-
 	r.Data = map[string]interface{}{
 		"order": order,
 	}
@@ -202,7 +202,6 @@ func (a *OrderApi) editOrder(ctx iris.Context) {
 		r.Code = base.ResError
 		r.Message = "参数错误"
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
 
@@ -218,10 +217,10 @@ func (a *OrderApi) editOrder(ctx iris.Context) {
 
 	err = a.service.EditStage(stage)
 	if err != nil {
+		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = err.Error()
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
 	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))

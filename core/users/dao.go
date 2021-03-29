@@ -41,6 +41,9 @@ func (dao *UserDao) GetByCond(user User) *[]User {
 	if user.Name != "" {
 		sql = sql + " and name=\"%" + user.Name + "%\""
 	}
+	if user.UserType != 0 {
+		sql = sql + " and user_type=" + strconv.Itoa(user.UserType)
+	}
 	err := dao.Runner.Find(&form, sql+" limit ?,?", user.Page-1, user.PageSize)
 	if err != nil {
 		log.Error(err)
