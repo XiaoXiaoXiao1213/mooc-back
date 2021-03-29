@@ -2,7 +2,7 @@ package web
 
 import (
 	"github.com/kataras/iris"
-	"management/core"
+	"management/core/common"
 	"management/core/users"
 	"management/infra/base"
 	"strconv"
@@ -17,7 +17,7 @@ func loginMeddle(ctx iris.Context) {
 		}
 		ctx.JSON(&r)
 	}
-	user, err := core.ParseToken(token)
+	user, err := common.ParseToken(token)
 	if err != nil {
 		r := base.Res{
 			Code:    base.ResError,
@@ -40,7 +40,7 @@ func employeeMeddle(ctx iris.Context) {
 		}
 		ctx.JSON(&r)
 	}
-	user, err := core.ParseToken(token)
+	user, err := common.ParseToken(token)
 	if err != nil {
 		r := base.Res{
 			Code:    base.ResError,
@@ -72,7 +72,7 @@ func manamgeMeddle(ctx iris.Context) {
 		}
 		ctx.JSON(&r)
 	}
-	user, err := core.ParseToken(token)
+	user, err := common.ParseToken(token)
 	if err != nil {
 		r := base.Res{
 			Code:    base.ResError,
@@ -101,4 +101,17 @@ func manamgeMeddle(ctx iris.Context) {
 	ctx.Request().Header.Set("user_type", strconv.Itoa(user.UserType))
 	ctx.Request().Header.Set("user_id", strconv.FormatInt(user.Id,10))
 	ctx.Next()
+}
+
+func refreshToken(ctx iris.Context) string {
+	phone := ctx.GetHeader("phone")
+	userId, _ := strconv.ParseInt(ctx.GetHeader("user_id"), 10, 64)
+	userType, _ := strconv.Atoi(ctx.GetHeader("user_type"))
+	user := users.User{
+		Phone:    phone,
+		Id:       userId,
+		UserType: userType,
+	}
+	token, _ := common.GenerateToken(user)
+	return token
 }

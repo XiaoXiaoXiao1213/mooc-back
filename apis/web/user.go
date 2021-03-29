@@ -3,7 +3,7 @@ package web
 import (
 	"github.com/kataras/iris"
 	"github.com/sirupsen/logrus"
-	"management/core"
+	"management/core/common"
 	"management/core/orders"
 	"management/core/users"
 	"management/infra"
@@ -102,7 +102,7 @@ func (u *UserApi) login(ctx iris.Context) {
 		return
 	}
 
-	token, _ := core.GenerateToken(*user)
+	token, _ := common.GenerateToken(*user)
 	ctx.ResponseWriter().Header().Set("token",token)
 	r.Data = map[string]interface{}{
 		"default_password": user.Password == user.Id_code[len(user.Id_code)-6:],
@@ -117,8 +117,9 @@ func (u *UserApi) order(ctx iris.Context) {
 	}
 
 	userId, _ := strconv.ParseInt(ctx.GetHeader("user_id"), 10, 64)
+	userType, _ := strconv.Atoi(ctx.GetHeader("user_id"))
 	service := orders.GetOrderService()
-	finishOrder, doingOrders, err := service.GetOrdersByUser(userId)
+	finishOrder, doingOrders, err := service.GetOrdersByUser(userId,userType)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
@@ -253,15 +254,3 @@ func checkUser(user users.User) bool {
 	return true
 }
 
-func refreshToken(ctx iris.Context) string {
-	phone := ctx.GetHeader("phone")
-	userId, _ := strconv.ParseInt(ctx.GetHeader("user_id"), 10, 64)
-	userType, _ := strconv.Atoi(ctx.GetHeader("user_type"))
-	user := users.User{
-		Phone:    phone,
-		Id:       userId,
-		UserType: userType,
-	}
-	token, _ := core.GenerateToken(user)
-	return token
-}

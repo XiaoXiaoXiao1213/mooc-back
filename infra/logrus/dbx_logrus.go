@@ -33,15 +33,4 @@ func (u *DbxLogrusLogger) Log(q *dbx.QueryStatus) {
 
 	}
 
-	//u.log.WithFields(log.Fields{
-	//   "SessID":       q.SessID,
-	//   "TxID":         q.TxID,
-	//   "LastInsertID": q.LastInsertID,
-	//   "Start":        q.Start,
-	//   "End":          q.End,
-	//   "Err":          q.Err,
-	//   "RowsAffected": q.RowsAffected,
-	//   "SQL":          q.Query,
-	//   "Args":         q.Args,
-	//}).Info()
 }
