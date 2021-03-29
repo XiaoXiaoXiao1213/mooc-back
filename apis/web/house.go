@@ -32,20 +32,21 @@ func (h *HouseApi) create(ctx iris.Context) {
 	//获取请求参数
 	house := houses.House{}
 	err := ctx.ReadJSON(&house)
-
 	if err != nil || house.HouseId == "" {
+		if err != nil {
+			logrus.Error(err)
+		}
 		r.Code = base.ResError
 		r.Message = "字段或字段值格式错误"
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
 
-	err = h.service.Create(house)
+	err = h.service.Create(&house)
 	if err != nil {
+		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = err.Error()
-		logrus.Error(err)
 	}
 	ctx.JSON(&r)
 }
@@ -57,33 +58,35 @@ func (h *HouseApi) register(ctx iris.Context) {
 	}
 
 	//获取请求参数
-	house := &houses.House{}
-	err := ctx.ReadJSON(house)
-	if err != nil || house.HouseId == "" || house.HouseholdId == 0 {
+	houseCond := houses.House{}
+	err := ctx.ReadJSON(&houseCond)
+	if err != nil || houseCond.HouseId == "" || houseCond.HouseholdId == 0 {
+		if err != nil {
+			logrus.Error(err)
+		}
 		r.Code = base.ResError
 		r.Message = "字段或字段值格式错误"
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
 
-	hou, err := h.service.SelectByHouseId(house.HouseId)
-
-	if err != nil || hou == nil || hou.HouseholdId != 0 {
+	house, err := h.service.SelectByHouseId(houseCond.HouseId)
+	if err != nil || house == nil || house.HouseholdId != 0 {
+		if err != nil {
+			logrus.Error(err)
+		}
 		r.Code = base.ResError
 		r.Message = "该房子不存在或已经被注册"
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
 
-	hou.HouseholdId = house.HouseholdId
-	err = h.service.Update(*hou)
+	house.HouseholdId = houseCond.HouseholdId
+	err = h.service.Update(house)
 	if err != nil {
+		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = err.Error()
-		logrus.Error(err)
 	}
 	ctx.JSON(&r)
-
 }

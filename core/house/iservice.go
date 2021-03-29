@@ -13,8 +13,8 @@ func GetHouseService() HouseService {
 }
 
 type HouseService interface {
-	Create(house House) error
-	Update(house House) error
+	Create(house *House) error
+	Update(house *House) error
 	SelectByHouseId(houseId string) (*House, error)
 	SelectByHouseholdId(household int) (*[]House, error)
 }
