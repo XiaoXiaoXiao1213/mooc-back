@@ -5,6 +5,7 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/tietang/dbx"
+	houses "management/core/house"
 	"management/infra/base"
 	"sync"
 	"time"
@@ -154,6 +155,13 @@ func (u *userService) GetUserByPhone(phone string, userType int) (user *User, er
 			err := errors.New("用户不存在")
 			log.Error(err)
 			return err
+		}
+		//TODO 关联房子
+		houseDao := houses.HouseDao{runner}
+		houses := houseDao.GetUserHouses(user.Id)
+		user.HouseId = []string{}
+		for _, house := range *houses {
+			user.HouseId = append(user.HouseId, house.HouseId)
 		}
 		return nil
 

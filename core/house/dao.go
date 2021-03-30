@@ -8,13 +8,13 @@ import (
 )
 
 type HouseDao struct {
-	runner *dbx.TxRunner
+	Runner *dbx.TxRunner
 }
 
 // 通过用户获取房子
-func (dao *HouseDao) GetUserHouses(userId int) *[]House {
+func (dao *HouseDao) GetUserHouses(userId int64) *[]House {
 	form := &[]House{}
-	err := dao.runner.Find(form, "select * from house where household_id=?", userId)
+	err := dao.Runner.Find(form, "select * from house where household_id=?", userId)
 	if err != nil {
 		logrus.Error(err)
 	}
@@ -24,7 +24,7 @@ func (dao *HouseDao) GetUserHouses(userId int) *[]House {
 // 通过用户获取房子
 func (dao *HouseDao) GetHousesById(houseId string) *House {
 	form := &House{}
-	ok, err := dao.runner.Get(form, "select * from house where house_id=?", houseId)
+	ok, err := dao.Runner.Get(form, "select * from house where house_id=?", houseId)
 	if err != nil || !ok {
 		return nil
 	}
@@ -32,7 +32,7 @@ func (dao *HouseDao) GetHousesById(houseId string) *House {
 }
 
 func (dao *HouseDao) Insert(house House) (int64, error) {
-	rs, err := dao.runner.Insert(house)
+	rs, err := dao.Runner.Insert(house)
 	if err != nil {
 		return 0, err
 	}
@@ -40,7 +40,7 @@ func (dao *HouseDao) Insert(house House) (int64, error) {
 }
 
 func (dao *HouseDao) Update(house House) (int64, error) {
-	rs, err := dao.runner.Update(house)
+	rs, err := dao.Runner.Update(house)
 	if err != nil {
 		return 0, err
 	}
@@ -48,7 +48,7 @@ func (dao *HouseDao) Update(house House) (int64, error) {
 }
 
 func (dao *HouseDao) DeleteByHouseId(houseId string) (int64, error) {
-	rs, err := dao.runner.Exec("delete from house where house_id=? limit 1",houseId)
+	rs, err := dao.Runner.Exec("delete from house where house_id=? limit 1",houseId)
 	if err != nil {
 		return 0, err
 	}
@@ -65,13 +65,13 @@ func (dao *HouseDao) GetByCond(house House) (*[]House, int) {
 		sql += " and household_id=" + strconv.FormatInt(house.HouseholdId, 10)
 	}
 
-	err := dao.runner.Find(&form, sql)
+	err := dao.Runner.Find(&form, sql)
 	if err != nil {
 		log.Error(err)
 		return nil, 0
 	}
 	count := len(form)
-	err = dao.runner.Find(&form, sql+" limit ?,?", house.Page-1, house.PageSize)
+	err = dao.Runner.Find(&form, sql+" limit ?,?", house.Page-1, house.PageSize)
 	if err != nil {
 		log.Error(err)
 		return nil, 0

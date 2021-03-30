@@ -16,7 +16,7 @@ type HouseService interface {
 	Create(house *House) error
 	Update(house *House) error
 	SelectByHouseId(houseId string) (*House, error)
-	SelectByHouseholdId(household int) (*[]House, error)
+	SelectByHouseholdId(household int64) (*[]House, error)
 	GetHousesByCond(cond House) (house *[]House, count int, err error)
 	DeleteHousesByHouseId(houseId string) (err error)
 

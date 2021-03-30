@@ -22,6 +22,7 @@ type User struct {
 	UpdatedAt  time.Time `db:"update_time" json:"update_time,omitempty" form:"update_time"`
 	Page       int       `db:"omitempty" json:"page,omitempty" form:"page"`
 	PageSize   int       `db:"omitempty" json:"page_size,omitempty" form:"page_size"`
+	HouseId    []string   `db:"omitempty"  json:"house_id,omitempty"`
 }
 
 type EmployeeScore struct {

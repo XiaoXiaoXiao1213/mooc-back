@@ -24,7 +24,7 @@ type houseService struct {
 func (h houseService) SelectByHouseId(houseId string) (*House, error) {
 	var house *House
 	err := base.Tx(func(runner *dbx.TxRunner) error {
-		dao := HouseDao{runner: runner}
+		dao := HouseDao{Runner: runner}
 		house = dao.GetHousesById(houseId)
 		if house == nil {
 			return errors.New("该房子不存在")
@@ -34,9 +34,9 @@ func (h houseService) SelectByHouseId(houseId string) (*House, error) {
 	return house, err
 }
 
-func (h houseService) SelectByHouseholdId(household int) (houses *[]House, err error) {
+func (h houseService) SelectByHouseholdId(household int64) (houses *[]House, err error) {
 	err = base.Tx(func(runner *dbx.TxRunner) error {
-		dao := HouseDao{runner: runner}
+		dao := HouseDao{Runner: runner}
 		houses = dao.GetUserHouses(household)
 		return nil
 	})
@@ -48,8 +48,8 @@ func (h houseService) Create(house *House) (err error) {
 	err = base.Tx(func(runner *dbx.TxRunner) error {
 		house.UpdatedAt = time.Now()
 		house.CreatedAt = time.Now()
-		dao := HouseDao{runner: runner}
-		_, err := dao.runner.Insert(house)
+		dao := HouseDao{Runner: runner}
+		_, err := dao.Runner.Insert(house)
 		if err != nil {
 			log.Error(err)
 		}
@@ -61,8 +61,8 @@ func (h houseService) Create(house *House) (err error) {
 func (h houseService) Update(house *House) error {
 	err := base.Tx(func(runner *dbx.TxRunner) error {
 		house.UpdatedAt = time.Now()
-		dao := HouseDao{runner: runner}
-		_, err := dao.runner.Update(house)
+		dao := HouseDao{Runner: runner}
+		_, err := dao.Runner.Update(house)
 		if err != nil {
 			log.Error(err)
 		}
@@ -74,7 +74,7 @@ func (h houseService) Update(house *House) error {
 
 func (h houseService) DeleteHousesByHouseId(houseId string) (err error) {
 	_ = base.Tx(func(runner *dbx.TxRunner) error {
-		dao := HouseDao{runner: runner}
+		dao := HouseDao{Runner: runner}
 		_, err := dao.DeleteByHouseId(houseId)
 		if err != nil {
 			log.Error(err)
@@ -87,7 +87,7 @@ func (h houseService) DeleteHousesByHouseId(houseId string) (err error) {
 
 func (h houseService) GetHousesByCond(cond House) (orders *[]House, count int, err error) {
 	_ = base.Tx(func(runner *dbx.TxRunner) error {
-		dao := HouseDao{runner: runner}
+		dao := HouseDao{Runner: runner}
 		if cond.Page == 0 {
 			cond.Page = 1
 		}
