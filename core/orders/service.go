@@ -295,14 +295,14 @@ func (o orderService) TakeOrder(phone string, userType int, orderId int64) error
 			return err
 		}
 
-		userDao := users.UserDao{}
+		userDao := users.UserDao{Runner: runner}
 		user := userDao.GetOne(phone, 2)
-		if user != nil {
+		if user == nil {
 			err := errors.New("找不到该员工，不能接单")
 			return err
 		}
 
-		orderDao := OrderDao{}
+		orderDao := OrderDao{runner: runner}
 		order := orderDao.GetOneByOrderId(orderId)
 		order.EmployeeId = user.Id
 		order.EmployeeName = user.Name

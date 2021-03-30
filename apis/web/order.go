@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"github.com/kataras/iris"
 	"github.com/sirupsen/logrus"
 	"management/core/common"
@@ -28,7 +29,7 @@ func (a *OrderApi) Init() {
 	groupRouter.Post("/{id}", loginMeddle, a.editOrder)
 	groupRouter.Post("/evaluation/{order_id}", loginMeddle, a.evaluationOrder)
 	groupRouter.Get("/emergency", employeeMeddle, a.getEmergencyOrder)
-	groupRouter.Put("/{order_id}", employeeMeddle, a.takeOrder)
+	groupRouter.Put("/emergency/{order_id}", employeeMeddle, a.takeOrder)
 
 }
 
@@ -75,6 +76,7 @@ func (a *OrderApi) takeOrder(ctx iris.Context) {
 	user_id, _ := strconv.ParseInt(ctx.GetHeader("user_id"), 10, 64)
 	userType, _ := strconv.Atoi(ctx.GetHeader("user_type"))
 	phone := ctx.GetHeader("phone")
+	fmt.Println(phone)
 	orderId, err := strconv.ParseInt(ctx.Params().Get("order_id"), 10, 64)
 	if err != nil {
 		r.Code = base.ResError
@@ -102,6 +104,7 @@ func (a *OrderApi) takeOrder(ctx iris.Context) {
 	order.EmployeeId = user_id
 	err = a.service.TakeOrder(phone, userType, orderId)
 	if err != nil {
+		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = "接单失败"
 		ctx.JSON(&r)
