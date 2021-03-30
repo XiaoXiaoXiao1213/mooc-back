@@ -50,6 +50,7 @@ func (dao *UserDao) GetByCond(user User) (*[]User, int) {
 		return nil, 0
 	}
 	count := len(form)
+	form = []User{}
 	err = dao.Runner.Find(&form, sql+" limit ?,?", user.Page-1, user.PageSize)
 	if err != nil {
 		log.Error(err)

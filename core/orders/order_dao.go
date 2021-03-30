@@ -61,6 +61,7 @@ func (dao *OrderDao) GetByCond(order Order) (*[]Order, int) {
 		return nil, 0
 	}
 	count := len(form)
+	form = []Order{}
 	err = dao.runner.Find(&form, sql+" limit ?,?", order.Page-1, order.PageSize)
 	if err != nil {
 		log.Error(err)
