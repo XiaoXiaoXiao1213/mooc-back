@@ -85,7 +85,7 @@ func (u *userService) Create(user User) error {
 		// 创建员工关联表
 		score := EmployeeScore{
 			EmployeeId: userId,
-			Skills: user.Skills,
+			Skills:     user.Skills,
 		}
 		scoreDao := EmployeeScoreDao{runner}
 		_, err = scoreDao.Insert(&score)
@@ -98,27 +98,31 @@ func (u *userService) Create(user User) error {
 	return err
 }
 func (u *userService) ResetPassword(user User) error {
-	var newUser *User
-	dao := UserDao{}
-	newUser = dao.GetOne(user.Phone, user.UserType)
-	if newUser == nil {
-		err := errors.New("用户不存在")
-		log.Error(err)
-		return err
-	}
-	if newUser.Id_code!=user.Id_code {
-		err := errors.New("身份证号码有误")
-		log.Error(err)
-		return err
-	}
-	newUser.Password = newUser.Id_code[len(newUser.Id_code)-6:]
-	newUser.UpdatedAt = time.Now()
-	updateCount, err := dao.Update(newUser)
-	if err != nil || updateCount < 1 {
-		log.Error(err)
-		return errors.New("重置密码失败")
-	}
-	return nil
+	err := base.Tx(func(runner *dbx.TxRunner) error {
+
+		var newUser *User
+		dao := UserDao{Runner: runner}
+		newUser = dao.GetOne(user.Phone, user.UserType)
+		if newUser == nil {
+			err := errors.New("用户不存在")
+			log.Error(err)
+			return err
+		}
+		if newUser.Id_code != user.Id_code {
+			err := errors.New("身份证号码有误")
+			log.Error(err)
+			return err
+		}
+		newUser.Password = newUser.Id_code[len(newUser.Id_code)-6:]
+		newUser.UpdatedAt = time.Now()
+		updateCount, err := dao.Update(newUser)
+		if err != nil || updateCount < 1 {
+			log.Error(err)
+			return errors.New("重置密码失败")
+		}
+		return nil
+	})
+	return err
 }
 func (u *userService) GetUserByCond(cond User) (*[]User, int, error) {
 	var users *[]User
