@@ -3,11 +3,13 @@ package web
 import (
 	"github.com/kataras/iris"
 	"github.com/sirupsen/logrus"
+	"management/core/common"
 	"management/core/orders"
 	"management/core/users"
 	"management/infra"
 	"management/infra/base"
 	"strconv"
+	"strings"
 )
 
 func init() {
@@ -25,16 +27,19 @@ func (a *OrderApi) Init() {
 	groupRouter.Get("/{id}", loginMeddle, a.getOrderById)
 	groupRouter.Post("/{id}", loginMeddle, a.editOrder)
 	groupRouter.Post("/evaluation/{order_id}", loginMeddle, a.evaluationOrder)
+	groupRouter.Get("/emergency", employeeMeddle, a.getEmergencyOrder)
 	groupRouter.Put("/{order_id}", employeeMeddle, a.takeOrder)
 
 }
 
 // 创建订单
 func (a *OrderApi) createOrder(ctx iris.Context) {
+	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
 
+	//获取请求参数
 	order := orders.Order{}
 	err := ctx.ReadJSON(&order)
 	if err != nil {
@@ -45,13 +50,10 @@ func (a *OrderApi) createOrder(ctx iris.Context) {
 		return
 	}
 
-	//获取请求参数
 	phone := ctx.GetHeader("phone")
 	userType, _ := strconv.Atoi(ctx.GetHeader("user_type"))
 	user := users.User{Phone: phone, UserType: userType}
 	res, err := a.service.Create(order, user)
-
-	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
 	if err != nil {
 		logrus.Error(err)
 		r.Code = base.ResError
@@ -66,46 +68,66 @@ func (a *OrderApi) createOrder(ctx iris.Context) {
 	ctx.JSON(&r)
 }
 
-// TODO 抢单
 func (a *OrderApi) takeOrder(ctx iris.Context) {
-	//r := base.Res{
-	//	Code: base.ResCodeOk,
-	//}
-	//orderId, err := strconv.ParseInt(ctx.Params().Get("order_id"), 10, 64)
-	//if err != nil {
-	//	r.Code = base.ResError
-	//	r.Message = "字段或字段值格式错误"
-	//	ctx.JSON(&r)
-	//	logrus.Error(err)
-	//	return
-	//}
-	//
-	//order := orders.Order{}
-	//err := ctx.ReadJSON(&order)
-	//if err != nil {
-	//	r.Code = base.ResError
-	//	r.Message = "字段或字段值格式错误"
-	//	ctx.JSON(&r)
-	//	logrus.Error(err)
-	//	return
-	//}
-	//
-	////获取请求参数
-	//phone := ctx.GetHeader("phone")
-	//userType, _ := strconv.Atoi(ctx.GetHeader("user_type"))
-	//user := users.User{Phone: phone, UserType: userType}
-	//res, err := a.service.Create(order, user)
-	//if err != nil {
-	//	r.Code = base.ResError
-	//	r.Message = err.Error()
-	//	logrus.Error(err)
-	//}
-	//ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
-	//
-	//r.Data = map[string]interface{}{
-	//	"order": res,
-	//}
-	//ctx.JSON(&r)
+	r := base.Res{
+		Code: base.ResCodeOk,
+	}
+	user_id, _ := strconv.ParseInt(ctx.GetHeader("user_id"), 10, 64)
+	userType, _ := strconv.Atoi(ctx.GetHeader("user_type"))
+	phone := ctx.GetHeader("phone")
+	orderId, err := strconv.ParseInt(ctx.Params().Get("order_id"), 10, 64)
+	if err != nil {
+		r.Code = base.ResError
+		r.Message = "字段或字段值格式错误"
+		ctx.JSON(&r)
+		return
+	}
+
+	order, err := a.service.GetOrdersById(orderId)
+	if err != nil {
+		logrus.Error(err)
+		r.Code = base.ResError
+		r.Message = err.Error()
+		ctx.JSON(&r)
+		return
+	}
+
+	if order.EmployeeId != 0 {
+		r.Code = base.ResError
+		r.Message = "该订单已经被接"
+		ctx.JSON(&r)
+		return
+	}
+
+	order.EmployeeId = user_id
+	err = a.service.TakeOrder(phone, userType, orderId)
+	if err != nil {
+		r.Code = base.ResError
+		r.Message = "接单失败"
+		ctx.JSON(&r)
+		return
+	}
+	ctx.JSON(&r)
+}
+
+func (a *OrderApi) getEmergencyOrder(ctx iris.Context) {
+	r := base.Res{
+		Code: base.ResCodeOk,
+	}
+	userId := ctx.GetHeader("user_id")
+	orderIds, err := common.Get(userId)
+	if err != nil || orderIds == "" {
+		r.Data = map[string]interface{}{
+			"order_ids": []string{},
+		}
+		ctx.JSON(&r)
+		return
+	}
+	orderIdArr := strings.Split(orderIds, "|")
+	r.Data = map[string]interface{}{
+		"order_ids": orderIdArr,
+	}
+	ctx.JSON(&r)
 }
 
 // 评价订单

@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"github.com/go-redis/redis/v8"
+	"time"
 )
 
 var ctx = context.Background()
@@ -15,23 +16,23 @@ func Client() *redis.Client {
 	})
 }
 
-func LSet(key string, values ...string) {
-
-	for _, value := range values {
-		err := Client().RPush(ctx, key, value).Err()
-		if err != nil {
-			panic(err)
-		}
+func Set(key string, value string) error {
+	err := Client().Set(ctx, key, value, time.Hour*24*15).Err()
+	if err != nil {
+		return err
 	}
+	return nil
 
 }
-//func LGet(key string, values ...string) {
-//
-//	for _, value := range values {
-//		err := Client().R(ctx, key, value).Err()
-//		if err != nil {
-//			panic(err)
-//		}
-//	}
-//
-//}
+func Get(key string) (string, error) {
+	res := Client().Get(ctx, key)
+	return res.Result()
+}
+
+func Delete(key string) error {
+	err := Client().Del(ctx, key).Err()
+	if err != nil {
+		return err
+	}
+	return nil
+}

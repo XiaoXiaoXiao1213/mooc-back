@@ -2,7 +2,6 @@ package users
 
 import (
 	"github.com/prometheus/common/log"
-	"github.com/sirupsen/logrus"
 	"github.com/tietang/dbx"
 	"strconv"
 )
@@ -11,18 +10,6 @@ type EmployeeScoreDao struct {
 	Runner *dbx.TxRunner
 }
 
-// 通过手机号和类型获取用户
-func (dao *EmployeeScoreDao) Get(phone string, userType int) *User {
-	form := &User{}
-
-	ok, err := dao.Runner.Get(form, "select * from user where phone=? and user_type=?", phone, userType)
-	if err != nil || !ok {
-		logrus.Error(err)
-		return nil
-	}
-
-	return form
-}
 func (dao *EmployeeScoreDao) GetByCond(user User) *[]User {
 	form := []User{}
 	sql := "select * from `user` where 1"

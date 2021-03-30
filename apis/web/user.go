@@ -164,6 +164,7 @@ func (u *UserApi) reset(ctx iris.Context) {
 }
 
 func (u *UserApi) message(ctx iris.Context) {
+	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
@@ -177,8 +178,6 @@ func (u *UserApi) message(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
-
 	r.Data = map[string]interface{}{
 		"user":  user,
 	}
@@ -186,6 +185,7 @@ func (u *UserApi) message(ctx iris.Context) {
 }
 
 func (u *UserApi) personal(ctx iris.Context) {
+	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
@@ -209,14 +209,11 @@ func (u *UserApi) personal(ctx iris.Context) {
 		r.Message = err.Error()
 		logrus.Error(err)
 	}
-	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
-	r.Data = map[string]interface{}{
-		"user":  user,
-	}
 	ctx.JSON(&r)
 }
 
 func (u *UserApi) click(ctx iris.Context) {
+	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
@@ -241,8 +238,6 @@ func (u *UserApi) click(ctx iris.Context) {
 		r.Message = "打卡失败"
 		logrus.Error(err)
 	}
-	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
-
 	ctx.JSON(&r)
 }
 

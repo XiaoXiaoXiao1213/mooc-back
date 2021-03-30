@@ -7,6 +7,7 @@ import (
 	"management/core/common"
 	"management/core/users"
 	"sort"
+	"strconv"
 	"strings"
 
 	//"management/core/users"
@@ -195,6 +196,7 @@ func (o orderService) Create(order Order, user users.User) (*Order, error) {
 				log.Error(err)
 				return err
 			}
+			var employeeIds []string
 			for _, employee := range *employees {
 				user = userDao.GetOneById(employee.EmployeeId)
 				if user == nil {
@@ -202,9 +204,25 @@ func (o orderService) Create(order Order, user users.User) (*Order, error) {
 					log.Error(err)
 					return err
 				}
-				// TODO 员工和订单要关联起来
+				orderIds, err := common.Get(strconv.FormatInt(employee.EmployeeId, 10))
+				if err != nil {
+					orderIds = strconv.FormatInt(orderId, 10)
+				} else {
+					orderIds += "|" + strconv.FormatInt(orderId, 10)
+				}
+				err = common.Set(strconv.FormatInt(employee.EmployeeId, 10), orderIds)
+				if err != nil {
+					log.Error(err)
+					return err
+				}
+				employeeIds = append(employeeIds, strconv.FormatInt(employee.EmployeeId, 10))
 				common.SendMail(user.Email, "内容", "内容")
-
+			}
+			employeeIdString := strings.Join(employeeIds, "|")
+			err := common.Set(strconv.FormatInt(order.Id, 10), employeeIdString)
+			if err != nil {
+				log.Error(err)
+				return err
 			}
 		}
 		return err
@@ -269,29 +287,72 @@ func (o orderService) GetOrdersById(orderId int64) (order *Order, err error) {
 	})
 	return order, err
 }
+
 func (o orderService) TakeOrder(phone string, userType int, orderId int64) error {
-	if userType != 2 {
-		err := errors.New("您不是员工，不能接单")
-		return err
-	}
-	userDao := users.UserDao{}
-	user := userDao.GetOne(phone, 2)
-	if user != nil {
-		err := errors.New("找不到该员工，不能接单")
-		return err
-	}
-	orderDao := OrderDao{}
-	order := orderDao.GetOneByOrderId(orderId)
-	order.EmployeeId = user.Id
-	order.EmployeeName = user.Name
-	order.UpdatedAt = time.Now()
-	order.Stage = 2
-	update, err := orderDao.Update(order)
-	if update < 1 || err != nil {
-		err := errors.New("接单失败")
-		return err
-	}
-	return nil
+	err := base.Tx(func(runner *dbx.TxRunner) error {
+		if userType != 2 {
+			err := errors.New("您不是员工，不能接单")
+			return err
+		}
+
+		userDao := users.UserDao{}
+		user := userDao.GetOne(phone, 2)
+		if user != nil {
+			err := errors.New("找不到该员工，不能接单")
+			return err
+		}
+
+		orderDao := OrderDao{}
+		order := orderDao.GetOneByOrderId(orderId)
+		order.EmployeeId = user.Id
+		order.EmployeeName = user.Name
+		order.UpdatedAt = time.Now()
+		order.Stage = 2
+		update, err := orderDao.Update(order)
+		if update < 1 || err != nil {
+			err := errors.New("更新订单失败")
+			return err
+		}
+
+		scoreDao := users.EmployeeScoreDao{Runner: runner}
+		employeeScore := scoreDao.GetByEmployeeId(user.Id)
+		if employeeScore == nil {
+			err := errors.New("查找员工分数表失败")
+			return err
+		}
+		employeeScore.DoingOrder += 1
+		update, err = scoreDao.Update(employeeScore)
+		if update < 1 || err != nil {
+			err := errors.New("更新员工分数表失败")
+			return err
+		}
+
+		employeeIds, err := common.Get(strconv.FormatInt(orderId, 10))
+		if err != nil {
+			err := errors.New("查找紧急订单人员失败")
+			return err
+		}
+		common.Delete(strconv.FormatInt(orderId, 10))
+		employeeIdArr := strings.Split(employeeIds, "|")
+		for _, employeeId := range employeeIdArr {
+			var newOrders []string
+			orders, _ := common.Get(employeeId)
+			ordersArr := strings.Split(orders, "|")
+			for _, employeeOrder := range ordersArr {
+				if employeeOrder == strconv.FormatInt(orderId, 10) {
+					continue
+				}
+				newOrders = append(newOrders, employeeOrder)
+			}
+			err = common.Set(employeeId, strings.Join(newOrders, "|"))
+			if err != nil {
+				return err
+			}
+
+		}
+		return nil
+	})
+	return err
 }
 
 func (o orderService) TakeEvaluation(evaluation Evaluation) error {

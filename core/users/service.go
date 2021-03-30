@@ -34,10 +34,8 @@ func (u *userService) Edit(user User) error {
 		}
 
 		createEditUser(oldUser, user)
-		log.Error("ea", oldUser)
 		oldUser.UpdatedAt = time.Now()
 		update, err := dao.Update(oldUser)
-		log.Error("ea", update)
 
 		if update < 1 || err != nil {
 			log.Error(err, fmt.Sprintf("update num %d", update))
@@ -79,14 +77,15 @@ func (u *userService) Create(user User) error {
 	user.UpdatedAt = time.Now()
 	err := base.Tx(func(runner *dbx.TxRunner) error {
 		dao := UserDao{runner}
-		_, err := dao.Runner.Insert(user)
+		userId, err := dao.Insert(&user)
 		if err != nil {
 			log.Error(err)
 			return err
 		}
 		// 创建员工关联表
 		score := EmployeeScore{
-			EmployeeId: user.Id,
+			EmployeeId: userId,
+			Skills: user.Skills,
 		}
 		scoreDao := EmployeeScoreDao{runner}
 		_, err = scoreDao.Insert(&score)
@@ -104,6 +103,11 @@ func (u *userService) ResetPassword(user User) error {
 	newUser = dao.GetOne(user.Phone, user.UserType)
 	if newUser == nil {
 		err := errors.New("用户不存在")
+		log.Error(err)
+		return err
+	}
+	if newUser.Id_code!=user.Id_code {
+		err := errors.New("身份证号码有误")
 		log.Error(err)
 		return err
 	}
@@ -156,7 +160,6 @@ func (u *userService) GetUserByPhone(phone string, userType int) (user *User, er
 			log.Error(err)
 			return err
 		}
-		//TODO 关联房子
 		houseDao := houses.HouseDao{runner}
 		houses := houseDao.GetUserHouses(user.Id)
 		user.HouseId = []string{}
