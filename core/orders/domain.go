@@ -19,7 +19,7 @@ type Order struct {
 	OrderStage    *[]OrderStage `db:"omitempty" json:"order_stage,omitempty" form:"order_stage"`
 	Page          int           `db:"omitempty" json:"page,omitempty" form:"page"`
 	PageSize      int           `db:"omitempty" json:"page_size,omitempty" form:"page_size"`
-	Level         int           `db:"level,omitempty" json:"level,omitempty" form:"level"`
+	Level         int           `db:"level" json:"level,omitempty" form:"level"`
 }
 
 type OrderStage struct {

@@ -7,6 +7,7 @@ import (
 	"management/core/common"
 	"management/core/users"
 	"sort"
+	"strings"
 
 	//"management/core/users"
 	"management/infra/base"
@@ -129,12 +130,14 @@ func (o orderService) Create(order Order, user users.User) (*Order, error) {
 		order.UpdatedAt = time.Now()
 		order.Stage = 1
 		orderId, err := dao.Insert(&order)
+		order.Id = orderId
 		if err != nil {
 			log.Error(err)
 			err := errors.New("创建订单失败")
 			return err
 		}
 
+		types := strings.Split(order.Type, "-")
 		// 3.创建订单阶段
 		orderStage := &OrderStage{
 			Stage:     order.Stage,
@@ -154,12 +157,13 @@ func (o orderService) Create(order Order, user users.User) (*Order, error) {
 		// 4.分配/抢单
 		scoreDao := users.EmployeeScoreDao{Runner: runner}
 		if order.Emergency == 1 { // 非紧急，直接分配
-			employee := scoreDao.GetNonUrgentEmployee()
+			employee := scoreDao.GetNonUrgentEmployee(types[0])
 			if employee == nil {
 				return errors.New("分配员工失败")
 			}
 
 			order.EmployeeId = employee.EmployeeId
+			order.UpdatedAt = time.Now()
 			_, err = dao.Update(&order)
 			if err != nil {
 				log.Error(err)
@@ -185,7 +189,7 @@ func (o orderService) Create(order Order, user users.User) (*Order, error) {
 			}
 			common.SendMail(user.Email, "内容", "内容")
 		} else {
-			employees := scoreDao.GetUrgentEmployee()
+			employees := scoreDao.GetUrgentEmployee(types[0])
 			if employees == nil {
 				err := errors.New("分配员工失败")
 				log.Error(err)

@@ -14,6 +14,9 @@ var nonUrgentMap = map[string]float64{
 }
 
 func AllocationAlgorithm(employeeScore users.EmployeeScore) (noUrgentScore, urgentScore float64) {
+	if employeeScore.OrderCount == 0 {
+		return 0, 0
+	}
 	noUrgentScore = (float64(employeeScore.DifficultScore)*nonUrgentMap["difficult"] +
 		float64(employeeScore.TimelyScore)*nonUrgentMap["timely"] +
 		float64(employeeScore.OrderScore)*nonUrgentMap["score"]) / float64(employeeScore.OrderCount)

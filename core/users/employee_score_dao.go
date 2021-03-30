@@ -50,13 +50,14 @@ func (dao *EmployeeScoreDao) GetByCond(user User) *[]User {
 }
 
 // 通过手机号和类型获取用户
-func (dao *EmployeeScoreDao) GetUrgentEmployee() *[]EmployeeScore {
+func (dao *EmployeeScoreDao) GetUrgentEmployee(orderType string) *[]EmployeeScore {
 	form := []EmployeeScore{}
-	sql := "select * from `employee_score` where state=2 and doing_order<2 order by urgent_score desc limit 3"
+	sql := "select * from `employee_score` where state=2 and doing_order<2 and skills like \"%" + orderType + "%\" order by urgent_score desc limit 3"
+	log.Error(sql)
 	err := dao.Runner.Find(&form, sql)
 	if err != nil || len(form) == 0 {
 		log.Error(err)
-		sql = "select * from `employee_score` where state=2 order by doing_order desc limit 3"
+		sql = "select * from `employee_score` where state=2 and skills like \"%" + orderType + "%\" order by doing_order desc limit 3"
 		err = dao.Runner.Find(&form, sql)
 		if err != nil {
 			log.Error(err)
@@ -65,26 +66,26 @@ func (dao *EmployeeScoreDao) GetUrgentEmployee() *[]EmployeeScore {
 	}
 	return &form
 }
-func (dao *EmployeeScoreDao) GetNonUrgentEmployee() *EmployeeScore {
-	form := EmployeeScore{}
-	sql := "select * from `employee_score` where state=2 and doing_order<5 order by non_urgent_score desc limit 1"
-	ok, err := dao.Runner.Get(&form, sql)
-	if err != nil || !ok {
-		log.Error(err)
-		sql = "select * from `employee_score` where state=2 order by non_urgent_score desc limit 1"
-		ok, err = dao.Runner.Get(&form, sql)
-		if err != nil || !ok {
+func (dao *EmployeeScoreDao) GetNonUrgentEmployee(orderType string) *EmployeeScore {
+	form := &[]EmployeeScore{}
+	sql := "select * from employee_score  where state=2 and doing_order<5 and skills like \"%" + orderType + "%\" order by non_urgent_score desc limit 1"
+	err := dao.Runner.Find(form, sql)
+	log.Error(form)
+	if err != nil || len(*form) == 0 {
+		sql = "select * from `employee_score` where state=2 and skills like \"%" + orderType + "%\" order by non_urgent_score desc limit 1"
+		err = dao.Runner.Find(&form, sql)
+		if err != nil || len(*form) == 0 {
 			log.Error(err)
 			return nil
 		}
 	}
-	return &form
+	return &(*form)[0]
 }
 
 func (dao *EmployeeScoreDao) GetByEmployeeId(employeeId int64) *EmployeeScore {
 	form := EmployeeScore{}
 	sql := "select * from `employee_score` where employee_id=?"
-	ok, err := dao.Runner.Get(&form, sql,employeeId)
+	ok, err := dao.Runner.Get(&form, sql, employeeId)
 	if err != nil || !ok {
 		log.Error(err)
 		return nil

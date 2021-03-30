@@ -14,10 +14,10 @@ type User struct {
 	Score      int       `db:"score" json:"score,omitempty" form:"score"`
 	State      int       `db:"state" json:"state,omitempty" form:"state"`
 	SuperState int       `db:"super_state" json:"super_state,omitempty" form:"super_state"` //	 0	1:非管理员  2:管理员
-	Skills     string    `db:"skills" json:"skills,omitempty" form:"skills"`           // 	“”(可修改)	技能 用数字映射
-	Password   string    `db:"password" json:"password,omitempty" form:"password"`       // varchar	身份证后6位	密码
-	Num        int       `db:"num" json:"num,omitempty" form:"num"`                 // 	默认为1	家庭人数
-	UserType   int       `db:"user_type" json:"user_type,omitempty" form:"user_type"`     // 	用户类型	1为住户 2为员工
+	Skills     string    `db:"skills" json:"skills,omitempty" form:"skills"`                // 	“”(可修改)	技能 用数字映射
+	Password   string    `db:"password" json:"password,omitempty" form:"password"`          // varchar	身份证后6位	密码
+	Num        int       `db:"num" json:"num,omitempty" form:"num"`                         // 	默认为1	家庭人数
+	UserType   int       `db:"user_type" json:"user_type,omitempty" form:"user_type"`       // 	用户类型	1为住户 2为员工
 	CreatedAt  time.Time `db:"create_time" json:"update_time,omitempty" form:"update_time"`
 	UpdatedAt  time.Time `db:"update_time" json:"update_time,omitempty" form:"update_time"`
 	Page       int       `db:"omitempty" json:"page,omitempty" form:"page"`
@@ -35,4 +35,5 @@ type EmployeeScore struct {
 	State          int     `db:"state" json:"state,omitempty"`
 	DoingOrder     int     `db:"doing_order" json:"doing_order,omitempty"`
 	OrderCount     int     `db:"order_count" json:"order_count,omitempty"`
+	Skills         string  `db:"skills" json:"skills,omitempty"`
 }
