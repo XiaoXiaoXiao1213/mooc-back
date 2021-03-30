@@ -62,7 +62,13 @@ func (h houseService) Update(house *House) error {
 	err := base.Tx(func(runner *dbx.TxRunner) error {
 		house.UpdatedAt = time.Now()
 		dao := HouseDao{Runner: runner}
-		_, err := dao.Runner.Update(house)
+		houseRes := dao.GetHousesById(house.HouseId)
+		if houseRes == nil {
+			return errors.New("找不到住宅信息")
+		}
+		houseRes.UpdatedAt = time.Now()
+		houseRes.HouseholdId = house.HouseholdId
+		_, err := dao.Runner.Update(houseRes)
 		if err != nil {
 			log.Error(err)
 		}

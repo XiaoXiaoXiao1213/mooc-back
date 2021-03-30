@@ -29,6 +29,8 @@ func (u *ManageApi) Init() {
 	groupRouter.Get("/order", manamgeMeddle, u.getOrder)
 	groupRouter.Get("/user", manamgeMeddle, u.getUser)
 	groupRouter.Get("/house", manamgeMeddle, u.getHouse)
+	groupRouter.Put("/user", manamgeMeddle, u.editUser)
+	groupRouter.Put("/house", manamgeMeddle, u.editHouse)
 	groupRouter.Delete("/house/delete/{house_id}", manamgeMeddle, u.deleteHouse)
 	groupRouter.Delete("/order/delete/{order_id}", manamgeMeddle, u.deleteOrder)
 	groupRouter.Delete("/user/delete/{user_id}", manamgeMeddle, u.deleteUser)
@@ -133,6 +135,63 @@ func (u *ManageApi) getHouse(ctx iris.Context) {
 	}
 	ctx.JSON(&r)
 }
+
+func (u *ManageApi) editHouse(ctx iris.Context) {
+	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
+	r := base.Res{
+		Code: base.ResCodeOk,
+	}
+
+	//获取请求参数
+	house := houses.House{}
+	err := ctx.ReadJSON(&house)
+	if err != nil || house.HouseId == "" {
+		logrus.Error(err)
+		r.Code = base.ResError
+		r.Message = "字段或字段值格式错误"
+		ctx.JSON(&r)
+		return
+	}
+
+	err = u.houseService.Update(&house)
+	if err != nil {
+		logrus.Error(err)
+		r.Code = base.ResError
+		r.Message = "更新失败"
+		ctx.JSON(&r)
+		return
+	}
+	ctx.JSON(&r)
+}
+
+func (u *ManageApi) editUser(ctx iris.Context) {
+	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
+	r := base.Res{
+		Code: base.ResCodeOk,
+	}
+
+	//获取请求参数
+	user := users.User{}
+	err := ctx.ReadJSON(&user)
+	if err != nil || user.Id == 0 {
+		logrus.Error(err)
+		r.Code = base.ResError
+		r.Message = "字段或字段值格式错误"
+		ctx.JSON(&r)
+		return
+	}
+
+	err = u.userService.Edit(user)
+	if err != nil {
+		logrus.Error(err)
+		r.Code = base.ResError
+		r.Message = "更新失败"
+		ctx.JSON(&r)
+		return
+	}
+	ctx.JSON(&r)
+}
+
 
 func (u *ManageApi) deleteHouse(ctx iris.Context) {
 	r := base.Res{

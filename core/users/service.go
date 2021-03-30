@@ -26,11 +26,19 @@ type userService struct {
 func (u *userService) Edit(user User) error {
 	err := base.Tx(func(runner *dbx.TxRunner) error {
 		dao := UserDao{runner}
-		oldUser := dao.GetOne(user.Phone, user.UserType)
+		oldUser := dao.GetOneById(user.Id)
 		if oldUser == nil {
 			err := errors.New("用户不存在")
 			log.Error(err)
 			return err
+		}
+		if user.Phone != "" {
+			phoneUser := dao.GetOne(user.Phone, user.UserType)
+			if phoneUser != nil && phoneUser.Id != user.Id {
+				err := errors.New("手机号已被注册")
+				log.Error(err)
+				return err
+			}
 		}
 
 		createEditUser(oldUser, user)

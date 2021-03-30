@@ -103,7 +103,7 @@ func (u *UserApi) login(ctx iris.Context) {
 	}
 
 	token, _ := common.GenerateToken(*user)
-	ctx.ResponseWriter().Header().Set("token",token)
+	ctx.ResponseWriter().Header().Set("token", token)
 	r.Data = map[string]interface{}{
 		"default_password": user.Password == user.Id_code[len(user.Id_code)-6:],
 	}
@@ -119,7 +119,7 @@ func (u *UserApi) order(ctx iris.Context) {
 	userId, _ := strconv.ParseInt(ctx.GetHeader("user_id"), 10, 64)
 	userType, _ := strconv.Atoi(ctx.GetHeader("user_id"))
 	service := orders.GetOrderService()
-	finishOrder, doingOrders, err := service.GetOrdersByUser(userId,userType)
+	finishOrder, doingOrders, err := service.GetOrdersByUser(userId, userType)
 	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
@@ -127,7 +127,7 @@ func (u *UserApi) order(ctx iris.Context) {
 		logrus.Error(err)
 		return
 	}
-	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
+	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
 
 	r.Data = map[string]interface{}{
 		"processing_list": doingOrders,
@@ -164,7 +164,7 @@ func (u *UserApi) reset(ctx iris.Context) {
 }
 
 func (u *UserApi) message(ctx iris.Context) {
-	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
+	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
@@ -179,13 +179,13 @@ func (u *UserApi) message(ctx iris.Context) {
 		return
 	}
 	r.Data = map[string]interface{}{
-		"user":  user,
+		"user": user,
 	}
 	ctx.JSON(&r)
 }
 
 func (u *UserApi) personal(ctx iris.Context) {
-	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
+	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
@@ -202,6 +202,7 @@ func (u *UserApi) personal(ctx iris.Context) {
 		return
 	}
 	user.Phone = ctx.GetHeader("phone")
+	user.Id, _ = strconv.ParseInt(ctx.GetHeader("user_id"), 10, 64)
 	user.UserType, _ = strconv.Atoi(ctx.GetHeader("user_type"))
 	err = u.service.Edit(user)
 	if err != nil {
@@ -213,7 +214,7 @@ func (u *UserApi) personal(ctx iris.Context) {
 }
 
 func (u *UserApi) click(ctx iris.Context) {
-	ctx.ResponseWriter().Header().Set("token",refreshToken(ctx))
+	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
@@ -248,4 +249,3 @@ func checkUser(user users.User) bool {
 	}
 	return true
 }
-

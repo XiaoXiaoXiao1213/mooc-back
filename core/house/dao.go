@@ -48,7 +48,7 @@ func (dao *HouseDao) Update(house House) (int64, error) {
 }
 
 func (dao *HouseDao) DeleteByHouseId(houseId string) (int64, error) {
-	rs, err := dao.Runner.Exec("delete from house where house_id=? limit 1",houseId)
+	rs, err := dao.Runner.Exec("delete from house where house_id=? limit 1", houseId)
 	if err != nil {
 		return 0, err
 	}
@@ -71,6 +71,7 @@ func (dao *HouseDao) GetByCond(house House) (*[]House, int) {
 		return nil, 0
 	}
 	count := len(form)
+	form = []House{}
 	err = dao.Runner.Find(&form, sql+" limit ?,?", house.Page-1, house.PageSize)
 	if err != nil {
 		log.Error(err)
