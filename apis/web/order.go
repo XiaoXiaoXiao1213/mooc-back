@@ -56,6 +56,7 @@ func (a *OrderApi) createOrder(ctx iris.Context) {
 		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = err.Error()
+		ctx.JSON(&r)
 		return
 	}
 

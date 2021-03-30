@@ -187,14 +187,15 @@ func (o orderService) Create(order Order, user users.User) (*Order, error) {
 		} else {
 			employees := scoreDao.GetUrgentEmployee()
 			if employees == nil {
-				log.Error(err)
 				err := errors.New("分配员工失败")
+				log.Error(err)
 				return err
 			}
 			for _, employee := range *employees {
 				user = userDao.GetOneById(employee.EmployeeId)
 				if user == nil {
 					err := errors.New("查找员工失败")
+					log.Error(err)
 					return err
 				}
 				// TODO 员工和订单要关联起来
