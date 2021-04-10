@@ -20,6 +20,7 @@ func Cors(ctx iris.Context) {
 	ctx.Next()
 }
 
+
 func loginMeddle(ctx iris.Context) {
 	res, user := parseTokenByRequest(ctx)
 	if res.Code != base.ResCodeOk {

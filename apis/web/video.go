@@ -24,13 +24,14 @@ type VideoApi struct {
 func (v *VideoApi) Init() {
 	v.service = videos.GetVideoService()
 	groupRouter := base.Iris().Party("/api/1.0/video")
-	groupRouter.Post("/create",Cors, v.createVideo)
-	groupRouter.Get("/id/{id}",Cors, v.getVideoById)
-	groupRouter.Get("/type/{type}",Cors, v.getVideoByType)
-	groupRouter.Get("/all",Cors, v.getVideo)
-	groupRouter.Put("/delete/{id}", Cors,loginMeddle, v.deleteVideo)
-	groupRouter.Put("/click/{id}", Cors,loginMeddle, v.clickVideo)
-	groupRouter.Get("/hot",Cors, v.getHotVideo)
+	groupRouter.Use(Cors)
+	groupRouter.Post("/create", v.createVideo)
+	groupRouter.Get("/id/{id}", v.getVideoById)
+	groupRouter.Get("/type/{type}",v.getVideoByType)
+	groupRouter.Get("/all", v.getVideo)
+	groupRouter.Put("/delete/{id}", loginMeddle, v.deleteVideo)
+	groupRouter.Put("/click/{id}", loginMeddle, v.clickVideo)
+	groupRouter.Get("/hot", v.getHotVideo)
 
 }
 
