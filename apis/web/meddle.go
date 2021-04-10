@@ -9,6 +9,17 @@ import (
 )
 
 //
+func Cors(ctx iris.Context) {
+	ctx.Header("Access-Control-Allow-Origin", "*")
+	if ctx.Request().Method == "OPTIONS" {
+		ctx.Header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS")
+		ctx.Header("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization")
+		ctx.StatusCode(204)
+		return
+	}
+	ctx.Next()
+}
+
 func loginMeddle(ctx iris.Context) {
 	res, user := parseTokenByRequest(ctx)
 	if res.Code != base.ResCodeOk {
