@@ -3,28 +3,6 @@ module management
 go 1.12
 
 //无法访问的原因，替换golang.org源为github.com源
-replace (
-	cloud.google.com/go => github.com/googleapis/google-cloud-go v0.37.2
-	golang.org/x/build => github.com/golang/build v0.0.0-20190327004547-5a2224f3eb52
-	golang.org/x/crypto => github.com/golang/crypto v0.0.0-20190325154230-a5d413f7728c
-	golang.org/x/exp => github.com/golang/exp v0.0.0-20190321205749-f0864edee7f3
-	golang.org/x/image => github.com/golang/image v0.0.0-20190321063152-3fc05d484e9f
-	golang.org/x/lint => github.com/golang/lint v0.0.0-20190313153728-d0100b6bd8b3
-	golang.org/x/mobile => github.com/golang/mobile v0.0.0-20190319155245-9487ef54b94a
-	golang.org/x/net => github.com/golang/net v0.0.0-20190327025741-74e053c68e29
-	golang.org/x/oauth2 => github.com/golang/oauth2 v0.0.0-20190319182350-c85d3e98c914
-	golang.org/x/perf => github.com/golang/perf v0.0.0-20190312170614-0655857e383f
-	golang.org/x/sync => github.com/golang/sync v0.0.0-20190227155943-e225da77a7e6
-	golang.org/x/sys => github.com/golang/sys v0.0.0-20190322080309-f49334f85ddc
-	golang.org/x/text => github.com/golang/text v0.3.0
-	golang.org/x/time => github.com/golang/time v0.0.0-20190308202827-9d24e82272b4
-	golang.org/x/tools => github.com/golang/tools v0.0.0-20190327011446-79af862e6737
-	google.golang.org/api => github.com/googleapis/google-api-go-client v0.3.0
-	google.golang.org/appengine => github.com/golang/appengine v1.5.0
-	google.golang.org/genproto => github.com/google/go-genproto v0.0.0-20190321212433-e79c0c59cdb5
-	google.golang.org/grpc => github.com/grpc/grpc-go v1.19.1
-
-)
 
 require (
 	github.com/Joker/jade v1.0.0 // indirect
@@ -39,7 +17,10 @@ require (
 	github.com/gavv/monotime v0.0.0-20171021193802-6f8212e8d10d // indirect
 	github.com/go-ini/ini v1.42.0 // indirect
 	github.com/go-redis/redis/v8 v8.8.0
+	github.com/go-redsync/redsync v1.4.2
 	github.com/go-sql-driver/mysql v1.4.1
+	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/uuid v1.2.0
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible // indirect
 	github.com/iris-contrib/formBinder v0.0.0-20190104093907-fbd5963f41e1 // indirect
@@ -78,10 +59,12 @@ require (
 	github.com/yudai/gojsondiff v1.0.0 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
 	github.com/yudai/pp v2.0.1+incompatible // indirect
+	github.com/zhenghaoz/gorse v0.1.3
 	golang.org/x/crypto v0.0.0-20201124201722-c8d3bf9c5392 // indirect
 	golang.org/x/text v0.3.4 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
+	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )

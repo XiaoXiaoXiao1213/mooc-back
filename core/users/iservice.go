@@ -1,10 +1,9 @@
 package users
 
 import (
+	"management/core/domain"
 	"management/infra/base"
 )
-
-
 
 var IUserService UserService
 
@@ -15,13 +14,9 @@ func GetUserService() UserService {
 }
 
 type UserService interface {
-	Create(user User) error
-	Edit(user User) error
-	Login(phone, password string, userType int) (*User,error)
-	ResetPassword(user User) error
-	GetUserByPhone(phone string, userType int) (*User, error)
-	GetUserById(userId int64) (*User, error)
-	GetUserByCond(user User) (*[]User,int, error)
-	DeleteUserById(userId int64) (err error)
-
+	Create(user domain.User) (*domain.User, error)
+	Login(phone, password string) (*domain.User, error)
+	ResetPassword(user domain.User,newPassword string) error
+	GetUserById(userId string) (*domain.User, error)
+	Update(user domain.User) error
 }

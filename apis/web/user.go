@@ -2,14 +2,17 @@ package web
 
 import (
 	"github.com/kataras/iris"
+	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/mgo.v2/bson"
 	"management/core/common"
-	"management/core/orders"
+	"management/core/domain"
 	"management/core/users"
+	videos "management/core/video"
 	"management/infra"
 	"management/infra/base"
+	"math/rand"
 	"strconv"
-	"time"
 )
 
 func init() {
@@ -17,235 +20,285 @@ func init() {
 }
 
 type UserApi struct {
-	service users.UserService
+	service      users.UserService
+	videoService videos.VideoService
 }
 
 func (u *UserApi) Init() {
 	u.service = users.GetUserService()
+	u.videoService = videos.GetVideoService()
 	groupRouter := base.Iris().Party("/api/1.0/user")
 	groupRouter.Post("/register", u.register)
 	groupRouter.Post("/login", u.login)
-	groupRouter.Put("/reset", u.reset)
+	groupRouter.Put("/logout", loginMeddle, u.logout)
+	groupRouter.Post("/password/reset", loginMeddle, u.reset)
 	groupRouter.Get("/message", loginMeddle, u.message)
-	groupRouter.Post("/personal", loginMeddle, u.personal)
-	groupRouter.Put("/click", employeeMeddle, u.click)
-	groupRouter.Get("/order", loginMeddle, u.order)
+	groupRouter.Post("/message/edit", loginMeddle, u.editMessage)
+	groupRouter.Get("/commend/video", loginMeddle, u.getCommendVideo)
+	groupRouter.Get("/commend/video/default", u.getCommendVideoDefault)
+	groupRouter.Get("/history/video", loginMeddle, u.getHistoryVideo)
+
+}
+
+func (u *UserApi) getHistoryVideo(ctx iris.Context) {
+	r := base.Res{
+		Code: base.ResCodeOk,
+	}
+	userId := ctx.GetHeader("user_id")
+	userRes, err := u.service.GetUserById(userId)
+	videos, total, err := u.videoService.GetHistoryVideo(*userRes)
+	if err != nil {
+		log.Error(err)
+		r.Code = base.ResError
+		r.Message = err.Error()
+		ctx.JSON(&r)
+		return
+	}
+	r.Data = map[string]interface{}{
+		"videos": videos,
+		"total":  total,
+		"token":  refreshToken(ctx),
+	}
+	ctx.JSON(&r)
 }
 
 // 用户注册
 func (u *UserApi) register(ctx iris.Context) {
 	r := base.Res{
-		Code: base.ResCodeOk,
+		Code:    base.ResCodeOk,
+		Message: "注册成功",
 	}
 
 	//获取请求参数
-	user := users.User{}
+	user := domain.User{}
 	err := ctx.ReadJSON(&user)
+
 	if err != nil {
+		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = "字段或字段值格式错误"
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
 
-	if !checkUser(user) {
-		r.Code = base.ResError
-		r.Message = "缺少参数"
-		ctx.JSON(&r)
-		logrus.Error(err)
-		return
-	}
-	_, err = u.service.GetUserByPhone(user.Phone, user.UserType)
-	if err == nil {
-		r.Code = base.ResError
-		r.Message = "用户已注册"
-		ctx.JSON(&r)
-		logrus.Error(err)
-		return
-	}
-
-	//创建用户
-	err = u.service.Create(user)
+	userRes, err := u.service.Create(user)
 	if err != nil {
+		log.Error(err)
 		r.Code = base.ResError
 		r.Message = err.Error()
-		logrus.Error(err)
 		ctx.JSON(&r)
 		return
 	}
-
+	r.Data = map[string]interface{}{
+		"user": userRes,
+	}
 	ctx.JSON(&r)
-
 }
 
+// 登陆
 func (u *UserApi) login(ctx iris.Context) {
 	r := base.Res{
-		Code: base.ResCodeOk,
+		Code:    base.ResCodeOk,
+		Message: "登陆成功",
 	}
+
 	//获取请求参数
-	user := &users.User{}
+	user := &domain.User{}
 	err := ctx.ReadJSON(user)
 	if err != nil {
+		logrus.Error("userApi login ctx.ReadJSON ：", err)
 		r.Code = base.ResError
-		r.Message = err.Error()
+		r.Message = "参数错误"
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
-	user, err = u.service.Login(user.Phone, user.Password, user.UserType)
-	if err != nil {
-		r.Code = base.ResError
-		r.Message = err.Error()
-		ctx.JSON(&r)
-		logrus.Error(err)
-		return
-	}
+	user, err = u.service.Login(user.Phone, user.Password)
 
+	if err != nil {
+		logrus.Error("userApi login u.service.Login：", err)
+		r.Code = base.ResError
+		r.Message = "没有该用户或密码错误"
+		ctx.JSON(&r)
+		return
+	}
 	token, _ := common.GenerateToken(*user)
-	ctx.ResponseWriter().Header().Set("token", token)
 	r.Data = map[string]interface{}{
-		"default_password": user.Password == user.Id_code[len(user.Id_code)-6:],
+		"user":  user,
+		"token": token,
 	}
 	ctx.JSON(&r)
-
 }
 
-func (u *UserApi) order(ctx iris.Context) {
+// 退出登陆
+func (u *UserApi) logout(ctx iris.Context) {
 	r := base.Res{
-		Code: base.ResCodeOk,
-	}
-
-	userId, _ := strconv.ParseInt(ctx.GetHeader("user_id"), 10, 64)
-	userType, _ := strconv.Atoi(ctx.GetHeader("user_id"))
-	service := orders.GetOrderService()
-	finishOrder, doingOrders, err := service.GetOrdersByUser(userId, userType)
-	if err != nil {
-		r.Code = base.ResError
-		r.Message = err.Error()
-		ctx.JSON(&r)
-		logrus.Error(err)
-		return
-	}
-	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
-
-	r.Data = map[string]interface{}{
-		"processing_list": doingOrders,
-		"complete_list":   finishOrder,
+		Code:    base.ResCodeOk,
+		Message: "退出登陆成功",
 	}
 	ctx.JSON(&r)
-
 }
 
+// 修改密码
 func (u *UserApi) reset(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
+		Message: "修改成功",
 	}
-
-	user := users.User{}
-	err := ctx.ReadJSON(&user)
-	if err != nil {
+	user:= domain.User{}
+	userP := domain.PasswordUser{}
+	ctx.ReadJSON(&userP)
+	log.Error("oldPassword",userP)
+	if userP.OldPassword == "" || userP.NewPassword == "" {
 		r.Code = base.ResError
-		r.Message = err.Error()
+		r.Message = "缺少参数"
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
-
-	err = u.service.ResetPassword(user)
+	if userP.ConfitPassword != userP.NewPassword {
+		r.Code = base.ResError
+		r.Message = "两次密码不一样"
+		ctx.JSON(&r)
+		return
+	}
+	userId := ctx.GetHeader("user_id")
+	user.Id = bson.ObjectId(userId)
+	user.Password = userP.OldPassword
+	err := u.service.ResetPassword(user, userP.NewPassword)
 	if err != nil {
+		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = err.Error()
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
 	ctx.JSON(&r)
 }
 
+// 获取用户信息
 func (u *UserApi) message(ctx iris.Context) {
-	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
-	phone := ctx.GetHeader("phone")
-	userType, err := strconv.Atoi(ctx.GetHeader("user_type"))
-	user, err := u.service.GetUserByPhone(phone, userType)
-	if err != nil {
+	userId := ctx.GetHeader("user_id")
+	user, err := u.service.GetUserById(userId)
+	if err != nil || user == nil {
+		logrus.Error(err)
 		r.Code = base.ResError
 		r.Message = err.Error()
 		ctx.JSON(&r)
-		logrus.Error(err)
 		return
 	}
 	r.Data = map[string]interface{}{
-		"user": user,
+		"user":  user,
+		"token": refreshToken(ctx),
 	}
 	ctx.JSON(&r)
 }
 
-func (u *UserApi) personal(ctx iris.Context) {
-	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
+// 修改信息
+func (u *UserApi) editMessage(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
 
-	//获取请求参数
-	user := users.User{}
-	err := ctx.ReadJSON(&user)
-
-	if err != nil {
-		r.Code = base.ResError
-		r.Message = "字段或字段值格式错误"
-		ctx.JSON(&r)
+	userId := ctx.GetHeader("user_id")
+	userRes, err := u.service.GetUserById(userId)
+	log.Error(userRes)
+	if err != nil || userRes == nil {
 		logrus.Error(err)
-		return
-	}
-	user.Phone = ctx.GetHeader("phone")
-	user.Id, _ = strconv.ParseInt(ctx.GetHeader("user_id"), 10, 64)
-	user.UserType, _ = strconv.Atoi(ctx.GetHeader("user_type"))
-	err = u.service.Edit(user)
-	if err != nil {
 		r.Code = base.ResError
 		r.Message = err.Error()
-		logrus.Error(err)
+		ctx.JSON(&r)
+		return
+	}
+	user := domain.User{}
+	ctx.ReadJSON(&user)
+
+	err = u.service.Update(user)
+
+	if err != nil {
+		logrus.Error("u.service.Update(user):", err)
+		r.Code = base.ResError
+		r.Message = err.Error()
+		ctx.JSON(&r)
+		return
+	}
+
+	r.Data = map[string]interface{}{
+		"user":  user,
+		"token": refreshToken(ctx),
 	}
 	ctx.JSON(&r)
 }
 
-func (u *UserApi) click(ctx iris.Context) {
-	ctx.ResponseWriter().Header().Set("token", refreshToken(ctx))
+// 获取推荐的视频信息
+func (u *UserApi) getCommendVideo(ctx iris.Context) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
-	phone := ctx.GetHeader("phone")
-	userType, _ := strconv.Atoi(ctx.GetHeader("user_type"))
-	if userType != 2 {
-		r.Code = base.ResError
-		r.Message = "该用户不是员工"
-		ctx.JSON(&r)
-	}
-
-	oldUser, err := u.service.GetUserByPhone(phone, userType)
-	if oldUser.State == 2 {
-		oldUser.State = 1
-	} else {
-		oldUser.State = 2
-	}
-	oldUser.UpdatedAt = time.Now()
-	err = u.service.Edit(*oldUser)
-	if err != nil {
-		r.Code = base.ResError
-		r.Message = "打卡失败"
+	userId := ctx.GetHeader("user_id")
+	userRes, err := u.service.GetUserById(userId)
+	if err != nil || userRes == nil {
 		logrus.Error(err)
+		r.Code = base.ResError
+		r.Message = err.Error()
+		ctx.JSON(&r)
+		return
+	}
+	cbVideoId := getSeed(userRes.CBInterests, 8)
+	cfVideoId := getSeed(userRes.CFInterests, 8)
+	res := append(cbVideoId, cfVideoId...)
+	res = getSeed(res, 8)
+	videos := []domain.Video{}
+	for _, id := range res {
+		video, err := u.videoService.GetVideoByObjectId(id)
+		if err != nil {
+			logrus.Error(" u.videoService.GetVideoById(id)", err)
+			r.Code = base.ResError
+			r.Message = err.Error()
+			ctx.JSON(&r)
+			return
+		}
+		videos = append(videos, *video)
+
+	}
+	r.Data = map[string]interface{}{
+		"videos": videos,
+		"token":  refreshToken(ctx),
 	}
 	ctx.JSON(&r)
 }
 
-func checkUser(user users.User) bool {
-	if user.Name == "" || user.Id_code == "" || user.Phone == "" || user.Email == "" ||
-		user.UserType == 0 {
-		return false
+func (u *UserApi) getCommendVideoDefault(ctx iris.Context) {
+	r := base.Res{
+		Code: base.ResCodeOk,
 	}
-	return true
+	video, err := u.videoService.GetRecommendVideo()
+	if err != nil {
+		log.Error(video)
+	}
+	r.Data = map[string]interface{}{
+		"videos": video,
+		"token":  refreshToken(ctx),
+	}
+	ctx.JSON(&r)
+}
+
+func getSeed(array []bson.ObjectId, count int) []bson.ObjectId {
+	if len(array) <= count {
+		return array
+	}
+	mapRes := make(map[string]bool)
+	res := []bson.ObjectId{}
+	for len(res) < count {
+		i := rand.Intn(len(array))
+		istr := strconv.Itoa(i)
+		m := mapRes[istr]
+		if m {
+			continue
+		}
+		mapRes[istr] = true
+		res = append(res, array[i])
+	}
+	return res
 }

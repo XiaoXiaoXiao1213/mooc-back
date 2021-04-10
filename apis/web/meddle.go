@@ -2,87 +2,36 @@ package web
 
 import (
 	"github.com/kataras/iris"
+	"gopkg.in/mgo.v2/bson"
 	"management/core/common"
-	"management/core/users"
+	"management/core/domain"
 	"management/infra/base"
-	"strconv"
 )
 
+//
 func loginMeddle(ctx iris.Context) {
 	res, user := parseTokenByRequest(ctx)
 	if res.Code != base.ResCodeOk {
 		ctx.JSON(&res)
 		return
 	}
-
-	ctx.Request().Header.Set("phone", user.Phone)
-	ctx.Request().Header.Set("user_type", strconv.Itoa(user.UserType))
-	ctx.Request().Header.Set("user_id", strconv.FormatInt(user.Id, 10))
-	ctx.Next()
-}
-
-func employeeMeddle(ctx iris.Context) {
-	res, user := parseTokenByRequest(ctx)
-	if res.Code != base.ResCodeOk {
-		ctx.JSON(&res)
-		return
-	}
-
-	if user.UserType != 2 {
-		res.Code = base.ResError
-		res.Message = "该用户不是员工"
-		ctx.JSON(&res)
-		return
-	}
-
-	ctx.Request().Header.Set("phone", user.Phone)
-	ctx.Request().Header.Set("user_type", strconv.Itoa(user.UserType))
-	ctx.Request().Header.Set("user_id", strconv.FormatInt(user.Id, 10))
-	ctx.Next()
-}
-
-func manamgeMeddle(ctx iris.Context) {
-	res, user := parseTokenByRequest(ctx)
-	if res.Code != base.ResCodeOk {
-		ctx.JSON(&res)
-		return
-	}
-
-	if user.UserType != 2 {
-		res.Code = base.ResError
-		res.Message = "该用户不是员工"
-		ctx.JSON(&res)
-		return
-	}
-
-	user, err := users.GetUserService().GetUserByPhone(user.Phone, user.UserType)
-	if err != nil || user == nil || user.SuperState != 2 {
-		res.Code = base.ResError
-		res.Message = "无权限"
-		ctx.JSON(&res)
-		return
-	}
-
-	ctx.Request().Header.Set("phone", user.Phone)
-	ctx.Request().Header.Set("user_type", strconv.Itoa(user.UserType))
-	ctx.Request().Header.Set("user_id", strconv.FormatInt(user.Id, 10))
+	ctx.Request().Header.Set("phone", (*user)["phone"])
+	ctx.Request().Header.Set("user_id", (*user)["user_id"])
 	ctx.Next()
 }
 
 func refreshToken(ctx iris.Context) string {
 	phone := ctx.GetHeader("phone")
-	userId, _ := strconv.ParseInt(ctx.GetHeader("user_id"), 10, 64)
-	userType, _ := strconv.Atoi(ctx.GetHeader("user_type"))
-	user := users.User{
-		Phone:    phone,
-		Id:       userId,
-		UserType: userType,
+	userId := ctx.GetHeader("user_id")
+	user := domain.User{
+		Phone: phone,
+		Id:    bson.ObjectId(userId),
 	}
 	token, _ := common.GenerateToken(user)
 	return token
 }
 
-func parseTokenByRequest(ctx iris.Context) (base.Res, *users.User) {
+func parseTokenByRequest(ctx iris.Context) (base.Res, *map[string]string) {
 	r := base.Res{
 		Code: base.ResCodeOk,
 	}
