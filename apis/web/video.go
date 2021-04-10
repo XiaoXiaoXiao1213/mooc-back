@@ -23,8 +23,16 @@ type VideoApi struct {
 
 func (v *VideoApi) Init() {
 	v.service = videos.GetVideoService()
+
 	groupRouter := base.Iris().Party("/api/1.0/video")
 	groupRouter.Use(Cors)
+	// common
+	common := groupRouter.Party("/")
+	{
+		common.Options("*", func(ctx iris.Context) {
+			ctx.Next()
+		})
+	}
 	groupRouter.Post("/create", v.createVideo)
 	groupRouter.Get("/id/{id}", v.getVideoById)
 	groupRouter.Get("/type/{type}",v.getVideoByType)
