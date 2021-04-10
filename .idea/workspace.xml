@@ -12,6 +12,7 @@
   <component name="ChangeListManager">
     <list default="true" id="f846a5ae-8a2d-469d-9e46-42c440f17d04" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/apis/web/meddle.go" beforeDir="false" afterPath="$PROJECT_DIR$/apis/web/meddle.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
