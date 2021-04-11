@@ -28,7 +28,6 @@ func (u *UserApi) Init() {
 	u.service = users.GetUserService()
 	u.videoService = videos.GetVideoService()
 	groupRouter := base.Iris().Party("/api/1.0/user")
-	groupRouter.Use(Cors)
 	groupRouter.Post("/register", u.register)
 	groupRouter.Post("/login", u.login)
 	groupRouter.Put("/logout", loginMeddle, u.logout)

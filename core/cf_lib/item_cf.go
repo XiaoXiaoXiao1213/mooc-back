@@ -81,7 +81,6 @@ func (cf *ItemCf) LoadData() {
 	cf.InitMaxUid()
 	cf.InitDivedSet()
 	cf.InitCalculateSet()
-
 	cf.AdjustCalculateSet() //修正余弦相似度
 }
 

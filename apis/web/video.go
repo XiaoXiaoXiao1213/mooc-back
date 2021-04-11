@@ -25,7 +25,6 @@ func (v *VideoApi) Init() {
 	v.service = videos.GetVideoService()
 
 	groupRouter := base.Iris().Party("/api/1.0/video")
-	groupRouter.Use(Cors)
 	// common
 	common := groupRouter.Party("/")
 	{
