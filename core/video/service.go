@@ -24,6 +24,7 @@ func init() {
 type videoService struct {
 }
 
+// 获取点击量最多的8个视频
 func (u *videoService) GetRecommendVideo() (*[]domain.Video, error) {
 	db := base.MgoDatabase()
 	videoDao := dao.VideoDao{db}
@@ -36,6 +37,7 @@ func (u *videoService) GetRecommendVideo() (*[]domain.Video, error) {
 	return video, nil
 }
 
+// 根据类型获取最热门的视频
 func (u *videoService) GetHotVideo(video domain.Video) (*[]domain.Video, int, error) {
 	db := base.MgoDatabase()
 	videoDao := dao.VideoDao{db}

@@ -20,14 +20,14 @@ type Video struct {
 //
 type VideoClick struct {
 	Id      bson.ObjectId `bson:"_id,omitempty"  form:"id" json:"id"`
-	VideoId int        `bson:"video_id,omitempty"  form:"video_id" json:"video_id"`
-	UserId  int        `bson:"user_id,omitempty"  form:"user_id" json:"user_id"`
+	VideoId int           `bson:"video_id,omitempty"  form:"video_id" json:"video_id"`
+	UserId  int           `bson:"user_id,omitempty"  form:"user_id" json:"user_id"`
 	Click   int           `bson:"click,omitempty"  form:"click" json:"click"`
 }
 
 type UserVideoHistory struct {
 	Id      bson.ObjectId `bson:"_id,omitempty"  form:"id" json:"id"`
-	VideoId int        `bson:"video_id,omitempty"  form:"video_id" json:"video_id"`
-	UserId  int        `bson:"user_id,omitempty"  form:"user_id" json:"user_id"`
+	VideoId int           `bson:"video_id,omitempty"  form:"video_id" json:"video_id"`
+	UserId  int           `bson:"user_id,omitempty"  form:"user_id" json:"user_id"`
 	Time    string        `bson:"time,omitempty"  form:"time" json:"time"`
 }

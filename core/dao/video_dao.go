@@ -20,7 +20,6 @@ func (dao *VideoDao) GetVideosByTypeAndHot(video domain.Video) (*[]domain.Video,
 			"video_type": video.VideoType,
 			"$or": []interface{}{
 				bson.M{"name": bson.M{"$regex": video.Content, "$options": "i"}},
-				bson.M{"content": bson.M{"$regex": video.Content, "$options": "i"}},
 				bson.M{"video_type": bson.M{"$regex": video.Content, "$options": "i"}},
 			},
 		}
@@ -33,7 +32,6 @@ func (dao *VideoDao) GetVideosByTypeAndHot(video domain.Video) (*[]domain.Video,
 		query := bson.M{
 			"$or": []interface{}{
 				bson.M{"name": bson.M{"$regex": video.Content, "$options": "i"}},
-				bson.M{"content": bson.M{"$regex": video.Content, "$options": "i"}},
 				bson.M{"video_type": bson.M{"$regex": video.Content, "$options": "i"}},
 			},
 		}
@@ -59,7 +57,6 @@ func (dao *VideoDao) GetVideosByType(video domain.Video) (*[]domain.Video, int, 
 			"video_type": video.VideoType,
 			"$or": []interface{}{
 				bson.M{"name": bson.M{"$regex": video.Content, "$options": "i"}},
-				bson.M{"content": bson.M{"$regex": video.Content, "$options": "i"}},
 				bson.M{"video_type": bson.M{"$regex": video.Content, "$options": "i"}},
 			},
 		}
@@ -83,7 +80,6 @@ func (dao *VideoDao) GetVideos(video domain.Video) (*[]domain.Video, int, error)
 		query := bson.M{
 			"$or": []interface{}{
 				bson.M{"name": bson.M{"$regex": video.Content, "$options": "i"}},
-				bson.M{"content": bson.M{"$regex": video.Content, "$options": "i"}},
 				bson.M{"video_type": bson.M{"$regex": video.Content, "$options": "i"}},
 			},
 		}

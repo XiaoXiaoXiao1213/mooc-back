@@ -8,11 +8,11 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"management/core/domain"
 )
-
+// 用户点击
 type UserClickDao struct {
 	DB *mgo.Database
 }
-
+// 根据用户id和视频id去查
 func (dao *UserClickDao) GetByUserAndVideo(videoClick domain.VideoClick) (*domain.VideoClick, error) {
 	var video = new(domain.VideoClick)
 	query := bson.M{
@@ -29,6 +29,7 @@ func (dao *UserClickDao) GetByUserAndVideo(videoClick domain.VideoClick) (*domai
 	return video, err
 }
 
+// 插入数据
 func (dao *UserClickDao) Insert(form *domain.VideoClick) error {
 	err := dao.DB.C("user_click").Insert(form)
 	if err != nil {
@@ -36,7 +37,7 @@ func (dao *UserClickDao) Insert(form *domain.VideoClick) error {
 	}
 	return err
 }
-
+// 更新数据
 func (dao *UserClickDao) Update(video *domain.VideoClick) error {
 	err := dao.DB.C("user_click").Update(bson.M{"_id": video.Id}, video)
 	if err != nil {
